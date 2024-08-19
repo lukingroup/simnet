@@ -97,14 +97,39 @@ class BlindComputing:
 
         return rho_3, fidX_c, fidY_c, fidZ_c, fidX_s, fidY_s, fidZ_s
     
+    #calculate blindess of a single qubit rotation
     def blindness_singleRot(self, rho_phi_array):
         # rho_phi_array has electron density matricies for i = 0,1,2,3 corresponding to 0, pi , pi/2 3pi/2
         N_phi = len(rho_phi_array)
         rho_all = np.mean(rho_phi_array)
-        print(rho_all)
         holevo = qt.entropy_vn(rho_all) - (1/N_phi)*np.mean(qt.entropy_vn(rho_phi_array))
-        # holevo_error = 
-        return holevo
+        holevo_error = 0
+        for k, rho in enumerate(rho_phi_array):
+            partial_derivatives = np.zeros(rho.shape)
+            
+            for i in range(rho.shape[0]):
+                for j in range(rho.shape[1]):
+                    perturbed_rho = rho.copy()
+                    perturbed_rho[i, j] += delta
+                    perturbed_chi = calculate_holevo_quantity(probabilities, [qt.Qobj(perturbed_rho) if idx == k else qt.Qobj(density_matrices[idx]) for idx in range(len(density_matrices))])
+                    
+                    partial_derivatives[i, j] = (perturbed_chi - chi) / delta
+                    
+            # Sum the squared errors propagated through each partial derivative
+            holevo_error += np.sum((partial_derivatives * density_matrix_errors[k]) ** 2)
+        
+        holevo_error = np.sqrt(holevo_error)
+
+        return holevo, holevo_error
+
+    def calculate_holevo_error(probabilities, density_matrices, density_matrix_errors, delta=1e-6):
+        chi = calculate_holevo_quantity(probabilities, density_matrices)
+        holevo_error = 0
+
+        
+        
+        return chi, holevo_error
+
 
     def plot_SiV(self):
         """Plotting Function"""
