@@ -1,0 +1,1 @@
+Python-based simulation package for quantum networking experiment built from one beam-splitter at a time. Originally meant to simulate experiments for the SiV team

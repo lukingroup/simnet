@@ -107,7 +107,6 @@ class SiV:
         return contrast
     
     def best_wSiV(self, wsiv_start, wsiv_end):
-        print("old siv freq = ", self.wSiv)
         wsivList = np.linspace(wsiv_start, wsiv_end, int(1*10**3))
     
         nonrefl_min= np.zeros(wsivList.shape)
