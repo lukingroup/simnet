@@ -528,7 +528,7 @@ def clean_and_convert_to_array(s):
         cleaned_str = re.sub(r'\s+', ' ', cleaned_str)
 
         # Add commas between complex numbers and elements
-        cleaned_str = re.sub(r'\]\s*\[', '],[', cleaned_str)
+        # cleaned_str = re.sub(r'\]\s*\[', '],[', cleaned_str)
 
         # Final cleanup and conversion to a list
         cleaned_str = cleaned_str.replace('[ ', '[').replace(' ]', ']').replace(' ', ',')
