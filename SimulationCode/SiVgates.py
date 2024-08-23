@@ -96,19 +96,19 @@ def siv_beamsplitter(cav_refl, contrast):
     if contrast == 'real':
         # print('real')
 
-        r1_up = 0.8
-        r1_down = 0.08
-        sc = 0.6
-        transm = 0
-        nsc = 0.997
-        ntransm = 0
+        # r1_up = 0.8
+        # r1_down = 0.08
+        # sc = 0.6
+        # transm = 0
+        # nsc = 0.997
+        # ntransm = 0
 
-        # r1_up = cav_refl['refl_refl']
-        # r1_down = cav_refl['nonrefl_refl']
-        # sc = cav_refl['refl_sc']
-        # transm = cav_refl['refl_tr']
-        # nsc = cav_refl['nonrefl_sc']
-        # ntransm = cav_refl['nonrefl_tr']
+        r1_up = cav_refl['refl_refl']
+        r1_down = cav_refl['nonrefl_refl']
+        sc = cav_refl['refl_sc']
+        transm = cav_refl['refl_tr']
+        nsc = cav_refl['nonrefl_sc']
+        ntransm = cav_refl['nonrefl_tr']
         
     elif contrast == 'perfect':
         # print('perfect')

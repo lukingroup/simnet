@@ -56,22 +56,22 @@ class BlindComputing:
         if imperfections['contrast_noise'] == False:
             wl = self.fiber_network.siv1.optimum_freq
             cav_refl = self.fiber_network.siv1.cav_refl(wl)
-            # print(imperfections['contrast_noise'], 1)
+            
         elif imperfections['contrast_noise'] == True:
             wl = np.random.normal(loc=self.fiber_network.siv1.optimum_freq, scale=50)
             cav_refl = self.fiber_network.siv1.cav_refl(wl)
-            # print(imperfections['contrast_noise'], 2)
 
         siv_beamsplitters = siv_beamsplitter(cav_refl, imperfections['contrast'])
-        # print(siv_beamsplitters)
+
         gates = mw_gates('perfect', 'stable')
 
         """Initial state"""
-
+        
         rho = 0
         for i in np.arange(cluster_state_length):
 
             """Spin photon entanglement"""
+
             rho_1 = spin_photon_entaglement(siv_beamsplitters, el_initial, gates['pi'], mu)
 
             """ - pi on the electron, to associate up spin with early timebin"""
