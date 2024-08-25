@@ -79,9 +79,9 @@ class BlindComputing:
             rho_2 = oper_pi*rho_1*oper_pi.dag() 
 
             """Add losses if needed"""
-            eff = 0.1
+            eff = 0.9
             rho_2l = loss_photonqubit_elSpin(rho_2, eff)
-            
+
             """Measure photon in the chosen basis"""
             rho_3 = phi_photon_measurement(rho_2l, phi1)
 

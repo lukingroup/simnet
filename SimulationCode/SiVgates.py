@@ -561,23 +561,22 @@ def phi_photon_measurement(rho, phi):
     # rho_14 = (oper_loss_apd1*(qt.tensor(rho_13, qt.fock_dm(N, 0)))*oper_loss_apd1.dag()).ptrace([0, 1, 2])
     # rho_15 = (oper_loss_apd2*(qt.tensor(rho_14, qt.fock_dm(N, 0)))*oper_loss_apd2.dag()).ptrace([0, 1, 2])
 
-    # measure
+    # measure (in blind experiment we selected for 1 photon events)
     Pj_01 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 1)))  # removed Id2
-    Pj_02 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 2)))
-    Pj_03 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 3)))
+    # Pj_02 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 2)))
+    # Pj_03 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 3)))
     
     Pj_10 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 1)), qt.ket2dm(qt.basis(N, 0)))  # removed Id2
-    Pj_20 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 2)), qt.ket2dm(qt.basis(N, 0)))
-    Pj_30 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 3)), qt.ket2dm(qt.basis(N, 0)))
+    # Pj_20 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 2)), qt.ket2dm(qt.basis(N, 0)))
+    # Pj_30 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 3)), qt.ket2dm(qt.basis(N, 0)))
     
     #overall
-    P_apd1 = Pj_01 + Pj_02 + Pj_03 # apd1 fires -> late time-bin
-    P_apd2 = Pj_10 + Pj_20 + Pj_30 # apd2 fires -> early time-bin
+    P_apd1 = Pj_01 #+ Pj_02 + Pj_03 # apd1 fires -> late time-bin
+    P_apd2 = Pj_10 #+ Pj_20 + Pj_30 # apd2 fires -> early time-bin
     
     #Final density matrix of the electron-photon state
     rho_final_b_apd1 = ((P_apd1*rho_13*P_apd1.dag())/(P_apd1*rho_13*P_apd1.dag()).tr()).ptrace([0]) # spin state left over after apd 1
     rho_final_b_apd2 = ((P_apd2*rho_13*P_apd2.dag())/(P_apd2*rho_13*P_apd2.dag()).tr()).ptrace([0]) # spin state left over after apd2
-
 
     # probability of each apd firing
     brate_apd_1 = (P_apd1*rho_13*P_apd1.dag()).tr()
