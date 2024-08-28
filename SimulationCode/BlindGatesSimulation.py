@@ -63,11 +63,12 @@ class BlindComputing:
 
         siv_beamsplitters = siv_beamsplitter(cav_refl, imperfections['contrast'])
 
-        gates = mw_gates('perfect', 'stable')
+        
+        # 'real'/'perfect' and 'stable'/'noisy'
+        gates = set_mw_fidelities(fid = imperfections['mw'], noise = imperfections['mw_noise'], fidel_val = imperfections['mw_fid_num'])
 
         """Initial state"""
         
-        rho = 0
         for i in np.arange(cluster_state_length):
 
             """Spin photon entanglement"""
@@ -97,8 +98,13 @@ class BlindComputing:
 
         return rho_3, fidX_c, fidY_c, fidZ_c, fidX_s, fidY_s, fidZ_s
     
-    #calculate blindess of a single qubit rotation
-    def blindness_singleRot(self, rho_phi_array, rho_std_phi_array, delta=1e-6):
+
+
+############## Extra Functions ###############
+
+ #calculate blindess of a single qubit rotation
+
+def blindness_singleRot(rho_phi_array, rho_std_phi_array, delta=1e-6):
         """
         Calculate the Holevo bound and its uncertainty given an array of density matrices and their standard deviations.
         
@@ -125,34 +131,44 @@ class BlindComputing:
         holevo_error = 0
         
         for k, rho in enumerate(rho_phi_array):
-            partial_derivatives = np.zeros(rho.shape)
+            partial_derivatives = np.zeros(rho.shape, dtype=complex)
             chi = holevo
             
             # Calculate the partial derivatives numerically
             for i in range(rho.shape[0]):
                 for j in range(rho.shape[1]):
                     perturbed_rho = rho.copy()
-                    perturbed_rho[i, j] += delta
                     
+                    # Apply perturbation and ensure Hermiticity
+                    delta_rho = np.zeros(rho.shape, dtype=complex)
+                    delta_rho[i, j] = delta
+                    delta_rho[j, i] = np.conj(delta_rho[i, j])  # Ensure Hermiticity
+                    
+                    # Adjust diagonal elements to preserve trace
+                    trace_adjustment = np.trace(delta_rho)
+                    delta_rho[i, i] -= trace_adjustment / rho.shape[0]
+                    
+                    perturbed_rho += delta_rho
+                    
+                    # Calculate perturbed average density matrix
                     perturbed_rho_all = np.mean(
                         [perturbed_rho if idx == k else rho_phi_array[idx] for idx in range(len(rho_phi_array))],
                         axis=0
                     )
                     
+                    # Recalculate mean entropy
                     perturbed_mn = np.mean([qt.entropy_vn(qt.Qobj(rho_phi)) for rho_phi in rho_phi_array])
                     
-                    perturbed_chi = qt.entropy_vn(qt.Qobj(perturbed_rho_all)) -  perturbed_mn
+                    # Calculate perturbed Holevo bound
+                    perturbed_chi = qt.entropy_vn(qt.Qobj(perturbed_rho_all)) - perturbed_mn
                     
+                    # Calculate the partial derivative
                     partial_derivatives[i, j] = (perturbed_chi - chi) / delta
             
             # Sum the squared errors propagated through each partial derivative
-            holevo_error += np.sum((partial_derivatives * rho_std_phi_array[k]) ** 2)
+            holevo_error += np.sum((np.abs(partial_derivatives) * rho_std_phi_array[k]) ** 2)
         
         # Take the square root to obtain the final uncertainty
         holevo_error = np.abs(np.sqrt(holevo_error))
         
         return holevo, holevo_error
-
-
-    def plot_SiV(self):
-        """Plotting Function"""

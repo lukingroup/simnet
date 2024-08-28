@@ -306,36 +306,38 @@ def nucleus_photon_entaglement(SiV_beamsplitter, el_initial, si29_initial, cond_
     return rho_6
 
 """MW gates for one spin only/Change to make fidelity active."""
-def mw_gates(fidelity, noise):
+#define functions for setting up mw gates 
+def set_mw_gates(fidelity, noise, gate_corrections):
     
     """pi half gate"""
     lam = 0
     phi = 0
-    correction = 1.15
+    correction_pi2 = gate_corrections['pi_half']
+
     if fidelity == 'perfect':
         theta = np.pi/2
         g_pi2 = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
     elif fidelity == 'real':
-        if noise == 'stable':
-            theta = correction*np.pi/2
+        if noise == 0 : #stable
+            theta = correction_pi2*np.pi/2
             g_pi2 = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
-        elif noise == 'noisy':
-            theta = np.random.normal(loc=np.pi/2, scale=(correction-1)*np.pi/2)
+        elif noise == 1: #noisy
+            theta = np.random.normal(loc=np.pi/2, scale=(correction_pi2-1)*np.pi/2)
             g_pi2 = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
     
     """pi gate"""
     lam = 0
     phi = 0
-    correction = 1.15
+    correction_pi = gate_corrections['pi']
     if fidelity == 'perfect':
         theta = np.pi
         g_pi = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
     elif fidelity == 'real':
-        if noise == 'stable':
-            theta = correction*np.pi
+        if noise == 0:
+            theta = correction_pi*np.pi
             g_pi = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
-        elif noise == 'noisy':
-            theta = np.random.normal(loc=np.pi, scale=(correction-1)*np.pi)
+        elif noise == 1:
+            theta = np.random.normal(loc=np.pi, scale=(correction_pi-1)*np.pi)
             g_pi = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
     
     dct = {'pi': g_pi,
@@ -343,6 +345,64 @@ def mw_gates(fidelity, noise):
             }
 
     return dct
+
+# calculate fidelities for angle corrections
+def generate_mw_fid(corr_pi, corr_pi2):
+    gate_corrections = {'pi': corr_pi,
+                'pi_half': corr_pi2
+                }
+    pi = set_mw_gates('real', 0, gate_corrections)['pi']
+    pi2 = set_mw_gates('real', 0, gate_corrections)['pi_half']
+    pi_fid = qt.fidelity(pi*qt.basis(2,0), qt.basis(2,1))**2
+    pi2_fid = qt.fidelity(pi2*qt.basis(2,0), (qt.basis(2,0)+ qt.basis(2,1)).unit())**2
+    return pi_fid, pi2_fid
+
+# make a list of corrections and corresponding fidelities
+def generate_mw_fid_corr_dict(pi_list_corr, pi2_list_corr):
+
+    pi_cor_fid = np.empty((0, 2), dtype=float)
+    pi2_cor_fid = np.empty((0, 2), dtype=float)
+
+    for i in range(len(pi_list_corr)):
+        fids = generate_mw_fid(pi_list_corr[i], pi2_list_corr[i])
+        pi_cor_fid = np.vstack((pi_cor_fid, np.array([[fids[0], pi_list_corr[i]]])))
+        pi2_cor_fid = np.vstack((pi2_cor_fid, np.array([[fids[1], pi2_list_corr[i]]])))
+
+    return pi_cor_fid, pi2_cor_fid
+
+
+
+#given a fidelity you want for pi and pi2 find corrections to the angle of rotation in the list
+
+def find_corr(fid_pi, fid_pi_half, array):
+    
+    #for pi
+    index_pi = np.abs(array[0][:, 0] - fid_pi).argmin()
+    corr_pi = array[0][index_pi, 1]
+
+    #for pi half
+    index_pi2 = np.abs(array[1][:, 0] - fid_pi_half).argmin()
+    corr_pi2 = array[1][index_pi2, 1]
+
+    # Print the corresponding second element
+    return corr_pi, corr_pi2
+
+# set mw pi and pi2 fidelity in one function, return the pi and pi2 operators
+def set_mw_fidelities(fid = 'real', noise = 0, fidel_val = 1):
+    fidpi = fidel_val['pi']
+    fidpi2 = fidel_val['pi_half']
+    
+    #generate a list of corrections and fidelities for pi and pi half for the electron only 
+    pi_list_corr = np.linspace(0.5, 1, 100)
+    pi2_list_corr = np.linspace(0.2, 1, 100)
+    result = generate_mw_fid_corr_dict(pi_list_corr, pi2_list_corr)
+
+    corr = find_corr(fidpi, fidpi2, result)
+    gate_corrections = {'pi': corr[0],
+                'pi_half': corr[1]
+                }
+    gates = set_mw_gates(fid, noise, gate_corrections)
+    return gates
     
 """Conditional gates with Si29."""
 def cond_mw_gates(gates):
@@ -491,6 +551,7 @@ def interfere_qubit_with_LO(rho, mu_LO, phi_LO):
 ##################################################################
 ##################### Fidelity errors  #########################
 
+# try this function for fidelity errors
 def calculate_fidelity_uncertainty(rho, sigma, rho_errors):
     # Convert rho and sigma to Qobj if they are not already
     rho_qobj = qt.Qobj(rho)
@@ -500,18 +561,28 @@ def calculate_fidelity_uncertainty(rho, sigma, rho_errors):
     F = (qt.fidelity(rho_qobj, sigma_qobj))**2
     
     # Calculate partial derivatives of fidelity with respect to each element of rho
-    partial_F_rho = np.zeros(rho.shape)
+    partial_F_rho = np.zeros(rho.shape, dtype=complex)
     
     for i in range(rho.shape[0]):
         for j in range(rho.shape[1]):
             # Derivatives with respect to rho
-            delta_rho = np.zeros(rho.shape)
-            delta_rho[i, j] = 1e-6  # Small perturbation
-            perturbed_fidelity = qt.fidelity(qt.Qobj(rho + delta_rho), sigma_qobj)**2
+            delta_rho = np.zeros(rho.shape, dtype=complex)
+            delta_rho[i, j] = 1e-6
+            
+            # Ensure Hermiticity
+            delta_rho[j, i] = np.conj(delta_rho[i, j])
+            
+            # Ensure trace preservation
+            trace_adjustment = np.trace(delta_rho)
+            delta_rho[i, i] -= trace_adjustment / rho.shape[0]
+            
+            # Calculate perturbed fidelity
+            perturbed_rho = qt.Qobj(rho + delta_rho)
+            perturbed_fidelity = qt.fidelity(perturbed_rho, sigma_qobj)**2
             partial_F_rho[i, j] = (perturbed_fidelity - F) / 1e-6
     
     # Calculate the uncertainty in fidelity
-    uncertainty = np.sqrt(np.sum((partial_F_rho * rho_errors) ** 2))
+    uncertainty = np.sqrt(np.sum((np.abs(partial_F_rho) * rho_errors) ** 2))
     
     return F, uncertainty
 
@@ -540,7 +611,6 @@ def clean_and_convert_to_array(s):
     except Exception as e:
         print(f"Conversion failed for: {cleaned_str}, Error: {e}")
         return np.nan
-
 
 ##################################################################
 ##################### Photon measurement #########################
