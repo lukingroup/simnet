@@ -63,9 +63,12 @@ class BlindComputing:
 
         siv_beamsplitters = siv_beamsplitter(cav_refl, imperfections['contrast'])
 
-        
+        fidel_values_pi_pi2 = {'pi': imperfections['mw_fid_num'][0],
+                'pi_half': imperfections['mw_fid_num'][1]
+                }
+        imperfections['mw_fid_num']
         # 'real'/'perfect' and 'stable'/'noisy'
-        gates = set_mw_fidelities(fid = imperfections['mw'], noise = imperfections['mw_noise'], fidel_val = imperfections['mw_fid_num'])
+        gates = set_mw_fidelities(fid = imperfections['mw'], noise = imperfections['mw_noise'], fidel_val = fidel_values_pi_pi2)
 
         """Initial state"""
         
@@ -104,71 +107,71 @@ class BlindComputing:
 
  #calculate blindess of a single qubit rotation
 
-def blindness_singleRot(rho_phi_array, rho_std_phi_array, delta=1e-6):
-        """
-        Calculate the Holevo bound and its uncertainty given an array of density matrices and their standard deviations.
+# def blindness_singleRot(rho_phi_array, rho_std_phi_array, delta=1e-6):
+#         """
+#         Calculate the Holevo bound and its uncertainty given an array of density matrices and their standard deviations.
         
-        Parameters:
-        - rho_phi_array: List or array of density matrices corresponding to different phases.
-        - rho_std_phi_array: List or array of standard deviations for each element in the density matrices.
-        - delta: Small perturbation value for numerical derivative (default is 1e-6).
+#         Parameters:
+#         - rho_phi_array: List or array of density matrices corresponding to different phases.
+#         - rho_std_phi_array: List or array of standard deviations for each element in the density matrices.
+#         - delta: Small perturbation value for numerical derivative (default is 1e-6).
         
-        Returns:
-        - holevo: The calculated Holevo bound.
-        - holevo_error: The uncertainty in the Holevo bound.
-        """
+#         Returns:
+#         - holevo: The calculated Holevo bound.
+#         - holevo_error: The uncertainty in the Holevo bound.
+#         """
         
-        # Calculate the average density matrix
-        rho_all = np.mean(rho_phi_array, axis=0)
+#         # Calculate the average density matrix
+#         rho_all = np.mean(rho_phi_array, axis=0)
         
-        # Calculate the mean entropy of the individual density matrices
-        mn = np.mean([qt.entropy_vn(qt.Qobj(rho)) for rho in rho_phi_array])
+#         # Calculate the mean entropy of the individual density matrices
+#         mn = np.mean([qt.entropy_vn(qt.Qobj(rho)) for rho in rho_phi_array])
 
-        # Calculate the Holevo bound
-        holevo = qt.entropy_vn(qt.Qobj(rho_all)) - mn
+#         # Calculate the Holevo bound
+#         holevo = qt.entropy_vn(qt.Qobj(rho_all)) - mn
 
-        # Initialize the error in the Holevo bound
-        holevo_error = 0
+#         # Initialize the error in the Holevo bound
+#         holevo_error = 0
         
-        for k, rho in enumerate(rho_phi_array):
-            partial_derivatives = np.zeros(rho.shape, dtype=complex)
-            chi = holevo
+#         for k, rho in enumerate(rho_phi_array):
+#             partial_derivatives = np.zeros(rho.shape, dtype=complex)
+#             chi = holevo
             
-            # Calculate the partial derivatives numerically
-            for i in range(rho.shape[0]):
-                for j in range(rho.shape[1]):
-                    perturbed_rho = rho.copy()
+#             # Calculate the partial derivatives numerically
+#             for i in range(rho.shape[0]):
+#                 for j in range(rho.shape[1]):
+#                     perturbed_rho = rho.copy()
                     
-                    # Apply perturbation and ensure Hermiticity
-                    delta_rho = np.zeros(rho.shape, dtype=complex)
-                    delta_rho[i, j] = delta
-                    delta_rho[j, i] = np.conj(delta_rho[i, j])  # Ensure Hermiticity
+#                     # Apply perturbation and ensure Hermiticity
+#                     delta_rho = np.zeros(rho.shape, dtype=complex)
+#                     delta_rho[i, j] = delta
+#                     delta_rho[j, i] = np.conj(delta_rho[i, j])  # Ensure Hermiticity
                     
-                    # Adjust diagonal elements to preserve trace
-                    trace_adjustment = np.trace(delta_rho)
-                    delta_rho[i, i] -= trace_adjustment / rho.shape[0]
+#                     # Adjust diagonal elements to preserve trace
+#                     trace_adjustment = np.trace(delta_rho)
+#                     delta_rho[i, i] -= trace_adjustment / rho.shape[0]
                     
-                    perturbed_rho += delta_rho
+#                     perturbed_rho += delta_rho
                     
-                    # Calculate perturbed average density matrix
-                    perturbed_rho_all = np.mean(
-                        [perturbed_rho if idx == k else rho_phi_array[idx] for idx in range(len(rho_phi_array))],
-                        axis=0
-                    )
+#                     # Calculate perturbed average density matrix
+#                     perturbed_rho_all = np.mean(
+#                         [perturbed_rho if idx == k else rho_phi_array[idx] for idx in range(len(rho_phi_array))],
+#                         axis=0
+#                     )
                     
-                    # Recalculate mean entropy
-                    perturbed_mn = np.mean([qt.entropy_vn(qt.Qobj(rho_phi)) for rho_phi in rho_phi_array])
+#                     # Recalculate mean entropy
+#                     perturbed_mn = np.mean([qt.entropy_vn(qt.Qobj(rho_phi)) for rho_phi in rho_phi_array])
                     
-                    # Calculate perturbed Holevo bound
-                    perturbed_chi = qt.entropy_vn(qt.Qobj(perturbed_rho_all)) - perturbed_mn
+#                     # Calculate perturbed Holevo bound
+#                     perturbed_chi = qt.entropy_vn(qt.Qobj(perturbed_rho_all)) - perturbed_mn
                     
-                    # Calculate the partial derivative
-                    partial_derivatives[i, j] = (perturbed_chi - chi) / delta
+#                     # Calculate the partial derivative
+#                     partial_derivatives[i, j] = (perturbed_chi - chi) / delta
             
-            # Sum the squared errors propagated through each partial derivative
-            holevo_error += np.sum((np.abs(partial_derivatives) * rho_std_phi_array[k]) ** 2)
+#             # Sum the squared errors propagated through each partial derivative
+#             holevo_error += np.sum((np.abs(partial_derivatives) * rho_std_phi_array[k]) ** 2)
         
-        # Take the square root to obtain the final uncertainty
-        holevo_error = np.abs(np.sqrt(holevo_error))
+#         # Take the square root to obtain the final uncertainty
+#         holevo_error = np.abs(np.sqrt(holevo_error))
         
-        return holevo, holevo_error
+#         return holevo, holevo_error

@@ -307,6 +307,7 @@ def nucleus_photon_entaglement(SiV_beamsplitter, el_initial, si29_initial, cond_
 
 """MW gates for one spin only/Change to make fidelity active."""
 #define functions for setting up mw gates 
+
 def set_mw_gates(fidelity, noise, gate_corrections):
     
     """pi half gate"""
@@ -322,7 +323,7 @@ def set_mw_gates(fidelity, noise, gate_corrections):
             theta = correction_pi2*np.pi/2
             g_pi2 = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
         elif noise == 1: #noisy
-            theta = np.random.normal(loc=np.pi/2, scale=(correction_pi2-1)*np.pi/2)
+            theta = np.random.normal(loc=np.pi/2, scale=np.abs(correction_pi2-1)*np.pi/2)
             g_pi2 = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
     
     """pi gate"""
@@ -337,7 +338,7 @@ def set_mw_gates(fidelity, noise, gate_corrections):
             theta = correction_pi*np.pi
             g_pi = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
         elif noise == 1:
-            theta = np.random.normal(loc=np.pi, scale=(correction_pi-1)*np.pi)
+            theta = np.random.normal(loc=np.pi, scale=np.abs(correction_pi-1)*np.pi)
             g_pi = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
     
     dct = {'pi': g_pi,
