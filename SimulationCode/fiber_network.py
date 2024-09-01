@@ -18,3 +18,7 @@ class FiberNetwork:
         self.snspd_eff  = 1
         self.aom_eff  = 1
         self.detection_eff = self.fibercoupling_eff*self.aom_eff*self.tdi_eff*self.snspd_eff
+
+    def detection_eff_reset(self):
+        self.detection_eff = self.fibercoupling_eff*self.aom_eff*self.tdi_eff*self.snspd_eff
+        return self.detection_eff

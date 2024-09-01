@@ -32,15 +32,15 @@ Noperator = qt.num(N)
 Pj_01 = qt.composite(qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 1)))
 Pj_02 = qt.composite(qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 2)))
 Pj_03 = qt.composite(qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 3)))
-# Pj_04 = qt.composite(qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 4)))
+#Pj_04 = qt.composite(qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 4)))
 
 Pj_10 = qt.composite(qt.ket2dm(qt.basis(N, 1)), qt.ket2dm(qt.basis(N, 0)))
 Pj_20 = qt.composite(qt.ket2dm(qt.basis(N, 2)), qt.ket2dm(qt.basis(N, 0)))
 Pj_30 = qt.composite(qt.ket2dm(qt.basis(N, 3)), qt.ket2dm(qt.basis(N, 0)))
-# Pj_40 = qt.composite(qt.ket2dm(qt.basis(N, 4)), qt.ket2dm(qt.basis(N, 0)))
+#Pj_40 = qt.composite(qt.ket2dm(qt.basis(N, 4)), qt.ket2dm(qt.basis(N, 0)))
 
-Apd1 =  Pj_01 + Pj_02 + Pj_03
-Apd2 =  Pj_10 + Pj_20 + Pj_30
+Apd1 =  Pj_01 + Pj_02 + Pj_03 
+Apd2 =  Pj_10 + Pj_20 + Pj_30 
 
 # Useful ideal state bases
 
@@ -616,12 +616,14 @@ def clean_and_convert_to_array(s):
 ##################################################################
 ##################### Photon measurement #########################
 
-def phi_photon_measurement(rho, phi):
-    tdi_noise = 0
-    ratio = np.random.normal(loc=0.5, scale=tdi_noise*0.1*0.5)
-    angle = np.random.normal(loc=2*np.pi, scale=tdi_noise*0.1*2*np.pi)
+def phi_photon_measurement(rho, phi, tdi_noise = 0):
+    ratio = np.random.normal(loc=0.5, scale=0*0.1*0.5)
+    angle = np.random.normal(loc=2*np.pi + tdi_noise, scale=0*0.1*2*np.pi)
     
     r = np.exp(1j*(angle + phi))*np.sqrt(ratio)
+    if np.abs(r) > 1:
+        r = 1
+    
     bs_5050_el_r = general_BS(r, np.sqrt(1-(abs(r))**2), a_1_2, a_2_2)
     
     #operation of interfering early and late bins on a 50/50 BS
