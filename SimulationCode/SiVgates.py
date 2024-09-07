@@ -619,7 +619,6 @@ def clean_and_convert_to_array(s):
 def phi_photon_measurement(rho, phi, tdi_noise = 0):
     ratio = np.random.normal(loc=0.5, scale=0*0.1*0.5)
     angle = np.random.normal(loc=2*np.pi + tdi_noise, scale=0*0.1*2*np.pi)
-    
     r = np.exp(1j*(angle + phi))*np.sqrt(ratio)
     if np.abs(r) > 1:
         r = 1
