@@ -6,7 +6,7 @@ from scipy.linalg import sqrtm
 import re
 
 ## size of the fock space
-N = 4
+N = 2
 
 ## identity operators for a spin 1/2 and a coherent state
 Id2 = qt.operators.identity(2)
@@ -30,17 +30,17 @@ Noperator = qt.num(N)
 
 ## Apd projection operators
 Pj_01 = qt.composite(qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 1)))
-Pj_02 = qt.composite(qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 2)))
-Pj_03 = qt.composite(qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 3)))
+# Pj_02 = qt.composite(qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 2)))
+# Pj_03 = qt.composite(qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 3)))
 #Pj_04 = qt.composite(qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 4)))
 
 Pj_10 = qt.composite(qt.ket2dm(qt.basis(N, 1)), qt.ket2dm(qt.basis(N, 0)))
-Pj_20 = qt.composite(qt.ket2dm(qt.basis(N, 2)), qt.ket2dm(qt.basis(N, 0)))
-Pj_30 = qt.composite(qt.ket2dm(qt.basis(N, 3)), qt.ket2dm(qt.basis(N, 0)))
+# Pj_20 = qt.composite(qt.ket2dm(qt.basis(N, 2)), qt.ket2dm(qt.basis(N, 0)))
+# Pj_30 = qt.composite(qt.ket2dm(qt.basis(N, 3)), qt.ket2dm(qt.basis(N, 0)))
 #Pj_40 = qt.composite(qt.ket2dm(qt.basis(N, 4)), qt.ket2dm(qt.basis(N, 0)))
 
-Apd1 =  Pj_01 + Pj_02 + Pj_03 
-Apd2 =  Pj_10 + Pj_20 + Pj_30 
+Apd1 =  Pj_01 
+Apd2 =  Pj_10
 
 # Useful ideal state bases
 
@@ -59,6 +59,123 @@ rho_ideal_Zp = qt.ket2dm(psi_ideal_Zp)
 psi_ideal_Zm = qt.basis(2, 1)
 rho_ideal_Zm = qt.ket2dm(psi_ideal_Zm) 
 
+##################################################################
+##################### MW and RF operations ###################
+
+"""MW gates for one spin only/Change to make fidelity active."""
+#define functions for setting up mw gates 
+
+def set_mw_gates(fidelity, noise, gate_corrections):
+    
+    """pi half gate"""
+    lam = 0
+    phi = 0
+    correction_pi2 = gate_corrections['pi_half']
+
+    if fidelity == 'perfect':
+        theta = np.pi/2
+        g_pi2 = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
+    elif fidelity == 'real':
+        if noise == 0 : #stable
+            theta = correction_pi2*np.pi/2
+            g_pi2 = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
+        elif noise == 1: #noisy
+            theta = np.random.normal(loc=np.pi/2, scale=np.abs(correction_pi2-1)*np.pi/2)
+            g_pi2 = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
+    
+    """pi gate"""
+    lam = 0
+    phi = 0
+    correction_pi = gate_corrections['pi']
+    if fidelity == 'perfect':
+        theta = np.pi
+        g_pi = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
+    elif fidelity == 'real':
+        if noise == 0:
+            theta = correction_pi*np.pi
+            g_pi = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
+        elif noise == 1:
+            theta = np.random.normal(loc=np.pi, scale=np.abs(correction_pi-1)*np.pi)
+            g_pi = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
+    
+    dct = {'pi': g_pi,
+            'pi_half': g_pi2
+            }
+
+    return dct
+
+# calculate fidelities for angle corrections
+def generate_mw_fid(corr_pi, corr_pi2):
+    gate_corrections = {'pi': corr_pi,
+                'pi_half': corr_pi2
+                }
+    pi = set_mw_gates('real', 0, gate_corrections)['pi']
+    pi2 = set_mw_gates('real', 0, gate_corrections)['pi_half']
+    pi_fid = qt.fidelity(pi*qt.basis(2,0), qt.basis(2,1))**2
+    pi2_fid = qt.fidelity(pi2*qt.basis(2,0), (qt.basis(2,0)+ qt.basis(2,1)).unit())**2
+    return pi_fid, pi2_fid
+
+# make a list of corrections and corresponding fidelities
+def generate_mw_fid_corr_dict(pi_list_corr, pi2_list_corr):
+
+    pi_cor_fid = np.empty((0, 2), dtype=float)
+    pi2_cor_fid = np.empty((0, 2), dtype=float)
+
+    for i in range(len(pi_list_corr)):
+        fids = generate_mw_fid(pi_list_corr[i], pi2_list_corr[i])
+        pi_cor_fid = np.vstack((pi_cor_fid, np.array([[fids[0], pi_list_corr[i]]])))
+        pi2_cor_fid = np.vstack((pi2_cor_fid, np.array([[fids[1], pi2_list_corr[i]]])))
+
+    return pi_cor_fid, pi2_cor_fid
+
+#given a fidelity you want for pi and pi2 find corrections to the angle of rotation in the list
+def find_corr(fid_pi, fid_pi_half, array):
+    
+    #for pi
+    index_pi = np.abs(array[0][:, 0] - fid_pi).argmin()
+    corr_pi = array[0][index_pi, 1]
+
+    #for pi half
+    index_pi2 = np.abs(array[1][:, 0] - fid_pi_half).argmin()
+    corr_pi2 = array[1][index_pi2, 1]
+
+    # Print the corresponding second element
+    return corr_pi, corr_pi2
+
+# set mw pi and pi2 fidelity in one function, return the pi and pi2 operators
+def set_mw_fidelities(fid = 'real', noise = 0, fidel_val = 1):
+    fidpi = fidel_val['pi']
+    fidpi2 = fidel_val['pi_half']
+    
+    #generate a list of corrections and fidelities for pi and pi half for the electron only 
+    pi_list_corr = np.linspace(0.5, 1, 100)
+    pi2_list_corr = np.linspace(0.2, 1, 100)
+    result = generate_mw_fid_corr_dict(pi_list_corr, pi2_list_corr)
+
+    corr = find_corr(fidpi, fidpi2, result)
+    gate_corrections = {'pi': corr[0],
+                'pi_half': corr[1]
+                }
+    gates = set_mw_gates(fid, noise, gate_corrections)
+    return gates
+    
+"""Conditional gates with Si29."""
+
+def cond_mw_gates(gate):
+    
+    pi_mw1 = qt.tensor(gate, qt.ket2dm(qt.basis(2, 0))) + qt.tensor(Id2, qt.ket2dm(qt.basis(2, 1)))
+    pi_mw2 = qt.tensor(gate, qt.ket2dm(qt.basis(2, 1))) + qt.tensor(Id2, qt.ket2dm(qt.basis(2, 0)))
+
+    cond_mw = {
+        'pi_mw1': pi_mw1,
+        'pi_mw2': pi_mw2
+    }
+
+    return cond_mw
+
+##################################################################
+##################### Beam splitter operations ###################
+
 """ A general beam splitter operator for all linear photonic operators """
 def general_BS(r, t, a1, a2):
         theta = np.arccos(abs(t))
@@ -69,23 +186,6 @@ def general_BS(r, t, a1, a2):
                     ((-1j*phase2/2)*(a1.dag()*a1 - a2.dag()*a2)).expm()
         return bs
 
-""" Add linear loss for a time-bin photonic qubit tensored with a single qubit """
-def loss_photonqubit_elSpin(rho, eff):
-    bs_e = general_BS(1j*np.sqrt(1 - eff), np.sqrt(eff), a_1_3, a_3_3)
-    bs_l = general_BS(1j*np.sqrt(1 - eff), np.sqrt(eff), a_2_3, a_3_3)
-
-     #operation of BS1 50/50 on early reflected beam
-    oper_e = qt.tensor(Id2, bs_e)
-    rho_1 = (oper_e*(qt.tensor(rho, qt.fock_dm(N, 0)))*oper_e.dag()).ptrace([0, 1, 2])
-
-    #operation of BS1 50/50 on late reflected beam
-    oper_l = qt.tensor(Id2, bs_l)
-    rho_2 = (oper_l*(qt.tensor(rho_1, qt.fock_dm(N, 0)))*oper_l.dag()).ptrace([0, 1, 2])
-    
-    # print('The number of photons after loss =', (Noperator*rho_2.ptrace([1])).tr() + (Noperator*rho_2.ptrace([2])).tr())
-
-    return rho_2
-
 """ Electron Photon Entaglement beamsplitter """
 def siv_beamsplitter(cav_refl, contrast):
 
@@ -94,15 +194,6 @@ def siv_beamsplitter(cav_refl, contrast):
     
     #cavity outputs for A and B
     if contrast == 'real':
-        # print('real')
-
-        # r1_up = 0.8
-        # r1_down = 0.08
-        # sc = 0.6
-        # transm = 0
-        # nsc = 0.997
-        # ntransm = 0
-
         r1_up = cav_refl['refl_refl']
         r1_down = cav_refl['nonrefl_refl']
         sc = cav_refl['refl_sc']
@@ -111,7 +202,6 @@ def siv_beamsplitter(cav_refl, contrast):
         ntransm = cav_refl['nonrefl_tr']
         
     elif contrast == 'perfect':
-        # print('perfect')
         r1_up = 1
         r1_down = 0
         sc = 0
@@ -229,6 +319,9 @@ def siv_beamsplitter_si29(cav_refl, contrast):
 
     return oper1, oper2
 
+##################################################################
+##################### Spin Photon gates ##########################
+
 """ Electron Photon Entanglement: take a qubit in and entangle it with a photonic time-bin qubit """
 def spin_photon_entaglement(SiV_beamsplitter, el_initial, pi, mu):
     
@@ -251,25 +344,11 @@ def spin_photon_entaglement(SiV_beamsplitter, el_initial, pi, mu):
     # print('The number of photons mid spin photon =', (Noperator*rho_2.ptrace([1])).tr(), (Noperator*rho_2.ptrace([2])).tr())
 
     # reflect late
-    
     rho_4 = SiV_beamsplitter[0]*(qt.tensor(rho_3, qt.fock_dm(N, 0)))*SiV_beamsplitter[0].dag()
     rho_5 = (SiV_beamsplitter[1]*(qt.tensor(rho_4, qt.fock_dm(N, 0)))*SiV_beamsplitter[1].dag()).ptrace([0, 2, 3])
-    
-    # print('The number of photons after spin photon =', (Noperator*rho_5.ptrace([1])).tr(), (Noperator*rho_5.ptrace([2])).tr())
 
-    # 50% loss from coupling and other inefficiencies
-    bs1_5050_e = general_BS(1j*np.sqrt(1/2), np.sqrt(1/2), a_1_3, a_3_3) # first amplitude (reflected) is loss
-    bs1_5050_l = general_BS(1j*np.sqrt(1/2), np.sqrt(1/2), a_2_3, a_3_3)
-    
-    #operation of BS1 50/50 on early reflected beam
-    oper5 = qt.tensor(Id2, bs1_5050_e) # removed Id2
-    rho_11 = (oper5*(qt.tensor(rho_5, qt.fock_dm(N, 0)))*oper5.dag()).ptrace([0, 1, 2])
-
-    #operation of BS1 50/50 on late reflected beam
-    oper6 = qt.tensor(Id2, bs1_5050_l) # removed Id2
-    rho_12 = (oper6*(qt.tensor(rho_11, qt.fock_dm(N, 0)))*oper6.dag()).ptrace([0, 1, 2])
     return rho_5
-    
+
 def nucleus_photon_entaglement(SiV_beamsplitter, el_initial, si29_initial, cond_pi, mu):
 
     ## state init
@@ -304,119 +383,6 @@ def nucleus_photon_entaglement(SiV_beamsplitter, el_initial, si29_initial, cond_
     # print('number of photons per qubit after the entanglement =', (Noperator*rho_5.ptrace([2])).tr(), (Noperator*rho_5.ptrace([3])).tr())
 
     return rho_6
-
-"""MW gates for one spin only/Change to make fidelity active."""
-#define functions for setting up mw gates 
-
-def set_mw_gates(fidelity, noise, gate_corrections):
-    
-    """pi half gate"""
-    lam = 0
-    phi = 0
-    correction_pi2 = gate_corrections['pi_half']
-
-    if fidelity == 'perfect':
-        theta = np.pi/2
-        g_pi2 = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
-    elif fidelity == 'real':
-        if noise == 0 : #stable
-            theta = correction_pi2*np.pi/2
-            g_pi2 = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
-        elif noise == 1: #noisy
-            theta = np.random.normal(loc=np.pi/2, scale=np.abs(correction_pi2-1)*np.pi/2)
-            g_pi2 = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
-    
-    """pi gate"""
-    lam = 0
-    phi = 0
-    correction_pi = gate_corrections['pi']
-    if fidelity == 'perfect':
-        theta = np.pi
-        g_pi = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
-    elif fidelity == 'real':
-        if noise == 0:
-            theta = correction_pi*np.pi
-            g_pi = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
-        elif noise == 1:
-            theta = np.random.normal(loc=np.pi, scale=np.abs(correction_pi-1)*np.pi)
-            g_pi = qt.Qobj([[np.cos(theta/2),  -np.exp(1j*lam)*np.sin(theta/2)],[np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(phi+lam))*np.cos(theta/2)]])
-    
-    dct = {'pi': g_pi,
-            'pi_half': g_pi2
-            }
-
-    return dct
-
-# calculate fidelities for angle corrections
-def generate_mw_fid(corr_pi, corr_pi2):
-    gate_corrections = {'pi': corr_pi,
-                'pi_half': corr_pi2
-                }
-    pi = set_mw_gates('real', 0, gate_corrections)['pi']
-    pi2 = set_mw_gates('real', 0, gate_corrections)['pi_half']
-    pi_fid = qt.fidelity(pi*qt.basis(2,0), qt.basis(2,1))**2
-    pi2_fid = qt.fidelity(pi2*qt.basis(2,0), (qt.basis(2,0)+ qt.basis(2,1)).unit())**2
-    return pi_fid, pi2_fid
-
-# make a list of corrections and corresponding fidelities
-def generate_mw_fid_corr_dict(pi_list_corr, pi2_list_corr):
-
-    pi_cor_fid = np.empty((0, 2), dtype=float)
-    pi2_cor_fid = np.empty((0, 2), dtype=float)
-
-    for i in range(len(pi_list_corr)):
-        fids = generate_mw_fid(pi_list_corr[i], pi2_list_corr[i])
-        pi_cor_fid = np.vstack((pi_cor_fid, np.array([[fids[0], pi_list_corr[i]]])))
-        pi2_cor_fid = np.vstack((pi2_cor_fid, np.array([[fids[1], pi2_list_corr[i]]])))
-
-    return pi_cor_fid, pi2_cor_fid
-
-
-
-#given a fidelity you want for pi and pi2 find corrections to the angle of rotation in the list
-
-def find_corr(fid_pi, fid_pi_half, array):
-    
-    #for pi
-    index_pi = np.abs(array[0][:, 0] - fid_pi).argmin()
-    corr_pi = array[0][index_pi, 1]
-
-    #for pi half
-    index_pi2 = np.abs(array[1][:, 0] - fid_pi_half).argmin()
-    corr_pi2 = array[1][index_pi2, 1]
-
-    # Print the corresponding second element
-    return corr_pi, corr_pi2
-
-# set mw pi and pi2 fidelity in one function, return the pi and pi2 operators
-def set_mw_fidelities(fid = 'real', noise = 0, fidel_val = 1):
-    fidpi = fidel_val['pi']
-    fidpi2 = fidel_val['pi_half']
-    
-    #generate a list of corrections and fidelities for pi and pi half for the electron only 
-    pi_list_corr = np.linspace(0.5, 1, 100)
-    pi2_list_corr = np.linspace(0.2, 1, 100)
-    result = generate_mw_fid_corr_dict(pi_list_corr, pi2_list_corr)
-
-    corr = find_corr(fidpi, fidpi2, result)
-    gate_corrections = {'pi': corr[0],
-                'pi_half': corr[1]
-                }
-    gates = set_mw_gates(fid, noise, gate_corrections)
-    return gates
-    
-"""Conditional gates with Si29."""
-def cond_mw_gates(gates):
-    
-    pi_mw1 = qt.tensor(gates['pi'], qt.ket2dm(qt.basis(2, 0))) + qt.tensor(Id2, qt.ket2dm(qt.basis(2, 1)))
-    pi_mw2 = qt.tensor(gates['pi'], qt.ket2dm(qt.basis(2, 1))) + qt.tensor(Id2, qt.ket2dm(qt.basis(2, 0)))
-
-    cond_mw = {
-        'pi_mw1': pi_mw1,
-        'pi_mw2': pi_mw2
-    }
-
-    return cond_mw
 
 ##################################################################
 ##################### Measurements ###############################
@@ -504,7 +470,6 @@ def fidelity_bases(tomography_output):
 
         }
         return fid
-
 
 #######################################################################################
 ##################### For telescope (maybe move it from here) #########################
@@ -617,6 +582,8 @@ def clean_and_convert_to_array(s):
 ##################### Photon measurement #########################
 
 def phi_photon_measurement(rho, phi, tdi_noise = 0):
+
+    # define a TDI
     ratio = np.random.normal(loc=0.5, scale=0*0.1*0.5)
     angle = np.random.normal(loc=2*np.pi + tdi_noise, scale=0*0.1*2*np.pi)
     r = np.exp(1j*(angle + phi))*np.sqrt(ratio)
@@ -629,10 +596,6 @@ def phi_photon_measurement(rho, phi, tdi_noise = 0):
     oper7 = qt.tensor(Id2, bs_5050_el_r)
     rho_13 = oper7*rho*oper7.dag()
     
-    # # now apply loss before detector
-    # rho_14 = (oper_loss_apd1*(qt.tensor(rho_13, qt.fock_dm(N, 0)))*oper_loss_apd1.dag()).ptrace([0, 1, 2])
-    # rho_15 = (oper_loss_apd2*(qt.tensor(rho_14, qt.fock_dm(N, 0)))*oper_loss_apd2.dag()).ptrace([0, 1, 2])
-
     # measure (in blind experiment we selected for 1 photon events)
     Pj_01 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 1)))  # removed Id2
     # Pj_02 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 2)))
@@ -667,3 +630,82 @@ def phi_photon_measurement(rho, phi, tdi_noise = 0):
     elif quantum_measurement == 2:
         spin_state = rho_final_b_apd2
     return spin_state, quantum_measurement-1, brate_apd_1, brate_apd_2, brate_apd_1 + brate_apd_2 # apd1 fires --> m = 1, apd2 fires --> m = 0
+
+def phi_photon_measurement_withsi29(rho, phi, tdi_noise = 0):
+
+    ratio = np.random.normal(loc=0.5, scale=0*0.1*0.5)
+    angle = np.random.normal(loc=2*np.pi + tdi_noise, scale=0*0.1*2*np.pi)
+    r = np.exp(1j*(angle + phi))*np.sqrt(ratio)
+    if np.abs(r) > 1:
+        r = 1
+    
+    bs_5050_el_r = general_BS(r, np.sqrt(1-(abs(r))**2), a_1_2, a_2_2)
+    
+    #operation of interfering early and late bins on a 50/50 BS
+    oper7 = qt.tensor(Id2,Id2, bs_5050_el_r)
+    rho_13 = oper7*rho*oper7.dag()
+    
+    # measure (in blind experiment we selected for 1 photon events)
+    Pj_01 = qt.composite(Id2, Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 1)))  # removed Id2 
+    Pj_10 = qt.composite(Id2, Id2, qt.ket2dm(qt.basis(N, 1)), qt.ket2dm(qt.basis(N, 0)))  # removed Id2
+   
+    #overall
+    P_apd1 = Pj_01 #+ Pj_02 + Pj_03 # apd1 fires -> late time-bin
+    P_apd2 = Pj_10 #+ Pj_20 + Pj_30 # apd2 fires -> early time-bin
+    
+    #Final density matrix of the electron-photon state
+    rho_final_b_apd1 = ((P_apd1*rho_13*P_apd1.dag())/(P_apd1*rho_13*P_apd1.dag()).tr()).ptrace([0, 1]) # spin state left over after apd 1
+    rho_final_b_apd2 = ((P_apd2*rho_13*P_apd2.dag())/(P_apd2*rho_13*P_apd2.dag()).tr()).ptrace([0, 1]) # spin state left over after apd2
+
+    # probability of each apd firing
+    brate_apd_1 = (P_apd1*rho_13*P_apd1.dag()).tr()
+    brate_apd_2 = (P_apd2*rho_13*P_apd2.dag()).tr()
+    bnorm_apd_rates = brate_apd_1 + brate_apd_2
+    bprob_apd1 = brate_apd_1 / bnorm_apd_rates # probability of apd1 firing
+    bprob_apd2 = brate_apd_2 / bnorm_apd_rates # probability of apd2 firing
+    if np.abs(1 - (bprob_apd1 + bprob_apd2)) < 0.001: 
+        pass   #this is in case trace above yields an approximation, in which case probs wont sum to 1 which yields error at choice
+    else:
+        return "Error: probabilities of apd1 and apd2 firing do not sum to 1"
+    # probabilistic projective measurement
+    quantum_measurement = np.random.choice([1,2], p=[bprob_apd1, bprob_apd2])
+    if quantum_measurement == 1:
+        spin_state = rho_final_b_apd1
+    elif quantum_measurement == 2:
+        spin_state = rho_final_b_apd2
+    return spin_state, quantum_measurement-1, brate_apd_1, brate_apd_2, brate_apd_1 + brate_apd_2 # apd1 fires --> m = 1, apd2 fires --> m = 0
+
+""" Add linear loss for a time-bin photonic qubit tensored with a two qubits el + Si29 """
+def loss_photonqubit_elSpin_withsi29(rho, eff):
+
+    bs_e = general_BS(1j*np.sqrt(1 - eff), np.sqrt(eff), a_1_3, a_3_3)
+    bs_l = general_BS(1j*np.sqrt(1 - eff), np.sqrt(eff), a_2_3, a_3_3)
+
+     #operation of BS1 50/50 on early reflected beam
+    oper_e = qt.tensor(Id2, Id2, bs_e)
+    rho_1 = (oper_e*(qt.tensor(rho, qt.fock_dm(N, 0)))*oper_e.dag()).ptrace([0, 1, 2, 3])
+
+    #operation of BS1 50/50 on late reflected beam
+    oper_l = qt.tensor(Id2, Id2, bs_l)
+    rho_2 = (oper_l*(qt.tensor(rho_1, qt.fock_dm(N, 0)))*oper_l.dag()).ptrace([0, 1, 2, 3])
+    
+    # print('The number of photons after loss =', (Noperator*rho_2.ptrace([1])).tr() + (Noperator*rho_2.ptrace([2])).tr())
+
+    return rho_2
+
+""" Add linear loss for a time-bin photonic qubit tensored with a single qubit """
+def loss_photonqubit_elSpin(rho, eff):
+    bs_e = general_BS(1j*np.sqrt(1 - eff), np.sqrt(eff), a_1_3, a_3_3)
+    bs_l = general_BS(1j*np.sqrt(1 - eff), np.sqrt(eff), a_2_3, a_3_3)
+
+     #operation of BS1 50/50 on early reflected beam
+    oper_e = qt.tensor(Id2, bs_e)
+    rho_1 = (oper_e*(qt.tensor(rho, qt.fock_dm(N, 0)))*oper_e.dag()).ptrace([0, 1, 2])
+
+    #operation of BS1 50/50 on late reflected beam
+    oper_l = qt.tensor(Id2, bs_l)
+    rho_2 = (oper_l*(qt.tensor(rho_1, qt.fock_dm(N, 0)))*oper_l.dag()).ptrace([0, 1, 2])
+    
+    # print('The number of photons after loss =', (Noperator*rho_2.ptrace([1])).tr() + (Noperator*rho_2.ptrace([2])).tr())
+
+    return rho_2
