@@ -2,3 +2,6 @@ Notebooks/MaxContrast_sim.nb
 Notebooks/MaxContrast.nb
 SimulationCode/__pycache__
 Notebooks/Blind_SingleNode_overnightRuns.ipynb
+SimulationCode/OutputFiles/
+entangling_*
+filename.png
