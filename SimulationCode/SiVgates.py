@@ -6,7 +6,7 @@ from scipy.linalg import sqrtm
 import re
 
 ## size of the fock space
-N = 2
+N = 3
 
 ## identity operators for a spin 1/2 and a coherent state
 Id2 = qt.operators.identity(2)
@@ -709,3 +709,48 @@ def loss_photonqubit_elSpin(rho, eff):
     # print('The number of photons after loss =', (Noperator*rho_2.ptrace([1])).tr() + (Noperator*rho_2.ptrace([2])).tr())
 
     return rho_2
+
+""" To figure out correlations between each time bin and matter qubit spins """
+def qudit_collapse(rho, timebine):
+    # for testing only: measure the correlatikos of spin state with each time bin
+    Pj_1000 = qt.composite(Id2, Id2, qt.ket2dm(qt.fock(N, 1)), qt.ket2dm(qt.fock(N, 0)), qt.ket2dm(qt.fock(N, 0)), qt.ket2dm(qt.fock(N, 0)))
+    Pj_0100 = qt.composite(Id2, Id2, qt.ket2dm(qt.fock(N, 0)), qt.ket2dm(qt.fock(N, 1)), qt.ket2dm(qt.fock(N, 0)), qt.ket2dm(qt.fock(N, 0)))        
+    Pj_0010 = qt.composite(Id2, Id2, qt.ket2dm(qt.fock(N, 0)), qt.ket2dm(qt.fock(N, 0)), qt.ket2dm(qt.fock(N, 1)), qt.ket2dm(qt.fock(N, 0)))
+    Pj_0001 = qt.composite(Id2, Id2,qt.ket2dm(qt.fock(N, 0)), qt.ket2dm(qt.fock(N, 0)), qt.ket2dm(qt.fock(N, 0)), qt.ket2dm(qt.fock(N, 1)))        
+    # probability of each bin firing
+    brate_bin_1 = (Pj_1000*rho*Pj_1000.dag()).tr()
+    brate_bin_2 = (Pj_0100*rho*Pj_0100.dag()).tr()
+    brate_bin_3 = (Pj_0010*rho*Pj_0010.dag()).tr()
+    brate_bin_4 = (Pj_0001*rho*Pj_0001.dag()).tr()    
+  
+    #Final density matrix of the electron state
+    rho_final_bin_1 = ((Pj_1000*rho*Pj_1000.dag())/brate_bin_1).ptrace([0, 1]) # spin state left over after bin 1 firing
+    rho_final_bin_2 = ((Pj_0100*rho*Pj_0100.dag())/brate_bin_2).ptrace([0, 1]) # spin state left over after bin 2 firing
+    rho_final_bin_3 = ((Pj_0010*rho*Pj_0010.dag())/brate_bin_3).ptrace([0, 1]) # spin state left over after bin 3 firing
+    rho_final_bin_4 = ((Pj_0001*rho*Pj_0001.dag())/brate_bin_4).ptrace([0, 1]) # spin state left over after bin 4 firing
+    
+    if timebine == 0:
+        rho = rho_final_bin_1
+    elif timebine == 1:
+        rho = rho_final_bin_2
+    elif timebine == 2:
+        rho = rho_final_bin_3
+    elif timebine == 3:
+        rho = rho_final_bin_4
+    return rho
+
+""" Generate d = 4 qudit with the timebin encoding """
+
+def generate_qudit(alpha):
+        "generate qudit with equal amplitude time bins and normalized with mu number of photons per qudit"
+        a = b = c = d = 1
+        norm = np.sqrt(4)
+        
+        time_bin_0 = qt.tensor(qt.coherent(N, alpha*norm*a), qt.coherent(N, 0), qt.coherent(N, 0), qt.coherent(N, 0))
+        time_bin_1 = qt.tensor(qt.coherent(N, 0), qt.coherent(N, alpha*norm*b), qt.coherent(N, 0), qt.coherent(N, 0))
+        time_bin_2 = qt.tensor(qt.coherent(N, 0), qt.coherent(N, 0), qt.coherent(N, alpha*norm*c), qt.coherent(N, 0))
+        time_bin_3 = qt.tensor(qt.coherent(N, 0), qt.coherent(N, 0), qt.coherent(N, 0), qt.coherent(N, alpha*norm*d))
+        qudit = (time_bin_0 + time_bin_1 + time_bin_2 + time_bin_3).unit()
+        
+        return qudit
+    
