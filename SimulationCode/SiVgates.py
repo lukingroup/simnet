@@ -59,6 +59,7 @@ rho_ideal_Zp = qt.ket2dm(psi_ideal_Zp)
 psi_ideal_Zm = qt.basis(2, 1)
 rho_ideal_Zm = qt.ket2dm(psi_ideal_Zm) 
 
+
 ##################################################################
 ##################### MW and RF operations ###################
 
@@ -709,6 +710,26 @@ def loss_photonqubit_elSpin(rho, eff):
     # print('The number of photons after loss =', (Noperator*rho_2.ptrace([1])).tr() + (Noperator*rho_2.ptrace([2])).tr())
 
     return rho_2
+
+""" Add linear loss for a time-bin photonic qudit tensored with a 3 qubits: el1 + el2 + n2  """
+def loss_photonqudit_el1el2n2(self, rho, eff):
+        """ Add linear loss for a time-bin photonic qudit tensored with a three qubits el1 + + el2 + n2 (Si29) """
+
+        a_1_5 = qt.tensor(qt.destroy(N), IdN, IdN, IdN, IdN)
+        a_5_5 = qt.tensor(IdN, IdN, IdN, IdN, qt.destroy(N))
+
+        bs_loss_per_timebin = general_BS(1j*np.sqrt(eff), np.sqrt(1 -eff), a_1_5, a_5_5)
+        oper_loss = qt.tensor(Id2, Id2, Id2, bs_loss_per_timebin)
+        # print('number of photons per timebin before loss  =', (Noperator*rho.ptrace([3])).tr(), (Noperator*rho.ptrace([4])).tr(), (Noperator*rho.ptrace([5])).tr(), (Noperator*rho.ptrace([6])).tr())
+
+        for i in range(4):
+            #operation of BS1 50/50 on early reflected beam
+            rho_1 = (oper_loss*(qt.tensor(rho, qt.fock_dm(N, 0)))*oper_loss.dag()).ptrace([0, 1, 2, 4, 5, 6, 7])
+            rho = rho_1
+            # print('number of photons per timebin after loss  =', (Noperator*rho.ptrace([3])).tr(), (Noperator*rho.ptrace([4])).tr(), (Noperator*rho.ptrace([5])).tr(), (Noperator*rho.ptrace([6])).tr())
+
+
+        return rho
 
 """ To figure out correlations between each time bin and matter qubit spins """
 def qudit_collapse(rho, timebine):
