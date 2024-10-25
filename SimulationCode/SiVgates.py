@@ -350,6 +350,34 @@ def spin_photon_entaglement(SiV_beamsplitter, el_initial, pi, mu):
 
     return rho_5
 
+""" Electron Photon Entanglement with si29 attached: take an el-nucleus in and entangle el with a photonic time-bin qubit """
+def spin_photon_entanglement_withsi29(SiV_beamsplitter, eln_initial, pi, mu):
+    
+    alpha = np.sqrt(mu)
+    early_time_bin = qt.tensor(qt.coherent(N, alpha/np.sqrt(2)), qt.coherent(N, 0))
+    late_time_bin = qt.tensor(qt.coherent(N, 0), qt.coherent(N, alpha/np.sqrt(2)))
+    input_coh = (early_time_bin + late_time_bin)
+    rho_0 = qt.tensor(eln_initial, qt.ket2dm(input_coh))
+
+    # print('Initial number of photons per qubit =', (Noperator*rho_0.ptrace([1])).tr(),  (Noperator*rho_0.ptrace([2])).tr())
+
+    # reflect early
+    rho_1 = SiV_beamsplitter[0]*(qt.tensor(rho_0, qt.fock_dm(N, 0)))*SiV_beamsplitter[0].dag()
+    rho_2 = (SiV_beamsplitter[1]*(qt.tensor(rho_1, qt.fock_dm(N, 0)))*SiV_beamsplitter[1].dag()).ptrace([0,1, 3, 4])
+
+    # do a pi gate on the electron
+    pi_oper = qt.tensor(pi, Id2, IdN, IdN)
+    rho_3 = pi_oper*rho_2*pi_oper.dag()
+    
+    # print('The number of photons mid spin photon =', (Noperator*rho_2.ptrace([1])).tr(), (Noperator*rho_2.ptrace([2])).tr())
+
+    # reflect late
+    rho_4 = SiV_beamsplitter[0]*(qt.tensor(rho_3, qt.fock_dm(N, 0)))*SiV_beamsplitter[0].dag()
+    rho_5 = (SiV_beamsplitter[1]*(qt.tensor(rho_4, qt.fock_dm(N, 0)))*SiV_beamsplitter[1].dag()).ptrace([0,1, 3, 4])
+
+    return rho_5
+
+## PHONE gate
 def nucleus_photon_entaglement(SiV_beamsplitter, el_initial, si29_initial, cond_pi, mu):
 
     ## state init
@@ -712,7 +740,7 @@ def loss_photonqubit_elSpin(rho, eff):
     return rho_2
 
 """ Add linear loss for a time-bin photonic qudit tensored with a 3 qubits: el1 + el2 + n2  """
-def loss_photonqudit_el1el2n2(self, rho, eff):
+def loss_photonqudit_el1el2n2(rho, eff):
         """ Add linear loss for a time-bin photonic qudit tensored with a three qubits el1 + + el2 + n2 (Si29) """
 
         a_1_5 = qt.tensor(qt.destroy(N), IdN, IdN, IdN, IdN)

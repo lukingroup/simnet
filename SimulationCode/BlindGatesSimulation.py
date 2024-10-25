@@ -209,7 +209,7 @@ class BlindComputing:
         gates = set_mw_fidelities(fid = imperfections['mw'], noise = imperfections['mw_noise'], fidel_val = fidel_values_pi_pi2)
 
         """Spin photon entanglement"""
-        rho_1 = self.spin_photon_entaglement_withsi29(siv_beamsplitters, rho, gates['pi'], mu)
+        rho_1 = spin_photon_entanglement_withsi29(siv_beamsplitters, rho, gates['pi'], mu)
 
         """ - pi on the electron, to associate up spin with early timebin"""
         oper_pi = qt.tensor(gates['pi'], Id2, IdN, IdN)
