@@ -832,7 +832,7 @@ def entropy_uncertainty_2q(lambdas, sigma_lambdas):
     sigma_lambda_1, sigma_lambda_2, sigma_lambda_3, sigma_lambda_4 = sigma_lambdas
     
     # Calculate the partial derivatives
-    safety = 10**(-18)
+    safety = 10**(-22)
     dS_dlambda_1 = -np.log(lambda_1 + safety) - 1
     dS_dlambda_2 = -np.log(lambda_2 + safety) - 1
     dS_dlambda_3 = -np.log(lambda_3 + safety) - 1
