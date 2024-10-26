@@ -660,8 +660,8 @@ def phi_photon_measurement(rho, phi, tdi_noise = 0):
         spin_state = rho_final_b_apd2
     return spin_state, quantum_measurement-1, brate_apd_1, brate_apd_2, brate_apd_1 + brate_apd_2 # apd1 fires --> m = 1, apd2 fires --> m = 0
 
+""" Measure the photonic qubit qith el2 + n2 """
 def phi_photon_measurement_withsi29(rho, phi, tdi_noise = 0):
-
     ratio = np.random.normal(loc=0.5, scale=0*0.1*0.5)
     angle = np.random.normal(loc=2*np.pi + tdi_noise, scale=0*0.1*2*np.pi)
     r = np.exp(1j*(angle + phi))*np.sqrt(ratio)
@@ -677,7 +677,7 @@ def phi_photon_measurement_withsi29(rho, phi, tdi_noise = 0):
     # measure (in blind experiment we selected for 1 photon events)
     Pj_01 = qt.composite(Id2, Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 1)))  # removed Id2 
     Pj_10 = qt.composite(Id2, Id2, qt.ket2dm(qt.basis(N, 1)), qt.ket2dm(qt.basis(N, 0)))  # removed Id2
-   
+
     #overall
     P_apd1 = Pj_01 #+ Pj_02 + Pj_03 # apd1 fires -> late time-bin
     P_apd2 = Pj_10 #+ Pj_20 + Pj_30 # apd2 fires -> early time-bin

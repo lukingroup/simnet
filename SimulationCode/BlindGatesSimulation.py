@@ -772,50 +772,6 @@ def holevo_bound_uncertainty_1q(rho_tot_lambdas, rho_tot_sigma_lambdas, rho_lamb
 
 ############## Single node two qubits experiments ###############
 
-""" Measure the photonic qubit qith el2 + n2 """
-def phi_photon_measurement_withsi29(rho, phi, tdi_noise = 0):
-    ratio = np.random.normal(loc=0.5, scale=0*0.1*0.5)
-    angle = np.random.normal(loc=2*np.pi + tdi_noise, scale=0*0.1*2*np.pi)
-    r = np.exp(1j*(angle + phi))*np.sqrt(ratio)
-    if np.abs(r) > 1:
-        r = 1
-    
-    bs_5050_el_r = general_BS(r, np.sqrt(1-(abs(r))**2), a_1_2, a_2_2)
-    
-    #operation of interfering early and late bins on a 50/50 BS
-    oper7 = qt.tensor(Id2,Id2, bs_5050_el_r)
-    rho_13 = oper7*rho*oper7.dag()
-    
-    # measure (in blind experiment we selected for 1 photon events)
-    Pj_01 = qt.composite(Id2, Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 1)))  # removed Id2 
-    Pj_10 = qt.composite(Id2, Id2, qt.ket2dm(qt.basis(N, 1)), qt.ket2dm(qt.basis(N, 0)))  # removed Id2
-
-    #overall
-    P_apd1 = Pj_01 #+ Pj_02 + Pj_03 # apd1 fires -> late time-bin
-    P_apd2 = Pj_10 #+ Pj_20 + Pj_30 # apd2 fires -> early time-bin
-    
-    #Final density matrix of the electron-photon state
-    rho_final_b_apd1 = ((P_apd1*rho_13*P_apd1.dag())/(P_apd1*rho_13*P_apd1.dag()).tr()).ptrace([0, 1]) # spin state left over after apd 1
-    rho_final_b_apd2 = ((P_apd2*rho_13*P_apd2.dag())/(P_apd2*rho_13*P_apd2.dag()).tr()).ptrace([0, 1]) # spin state left over after apd2
-
-    # probability of each apd firing
-    brate_apd_1 = (P_apd1*rho_13*P_apd1.dag()).tr()
-    brate_apd_2 = (P_apd2*rho_13*P_apd2.dag()).tr()
-    bnorm_apd_rates = brate_apd_1 + brate_apd_2
-    bprob_apd1 = brate_apd_1 / bnorm_apd_rates # probability of apd1 firing
-    bprob_apd2 = brate_apd_2 / bnorm_apd_rates # probability of apd2 firing
-    if np.abs(1 - (bprob_apd1 + bprob_apd2)) < 0.001: 
-        pass   #this is in case trace above yields an approximation, in which case probs wont sum to 1 which yields error at choice
-    else:
-        return "Error: probabilities of apd1 and apd2 firing do not sum to 1"
-    # probabilistic projective measurement
-    quantum_measurement = np.random.choice([1,2], p=[bprob_apd1, bprob_apd2])
-    if quantum_measurement == 1:
-        spin_state = rho_final_b_apd1
-    elif quantum_measurement == 2:
-        spin_state = rho_final_b_apd2
-    return spin_state, quantum_measurement-1, brate_apd_1, brate_apd_2, brate_apd_1 + brate_apd_2 # apd1 fires --> m = 1, apd2 fires --> m = 0
-
 def entropy_uncertainty_2q(lambdas, sigma_lambdas):
     """
     Calculate the uncertainty in the von Neumann entropy S(ρ) for a 2-qubit system 
