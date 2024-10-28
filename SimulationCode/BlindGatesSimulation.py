@@ -432,7 +432,7 @@ class BlindComputing:
             wl_1 = np.random.normal(loc=self.fiber_network.siv1.optimum_freq, scale=50)
             wl_2 = np.random.normal(loc=self.fiber_network.siv2.optimum_freq, scale=50)
             cav_refl_1 = self.fiber_network.siv1.cav_refl(wl_1)
-            cav_refl_2 = self.fiber_network.siv1.cav_refl(wl_2)
+            cav_refl_2 = self.fiber_network.siv2.cav_refl(wl_2)
 
         # I will assume the microwave fidelities are the same in both nodes
         fidel_values_pi_pi2 = {'pi': imperfections['mw_fid_num'][0],
@@ -1022,8 +1022,8 @@ def get_oracle(qube, measure1, measure2, Oracle_group):
     return oracle
 
 def measure_el1_DJ(rho):
-    P_= qt.composite(Id2, rho_ideal_Xm, Id2)
-    rho_out =  ((P_*rho*P_.dag())/((P_*rho*P_.dag()).tr())).ptrace([0, 2])
+    Proj= qt.composite(Id2, rho_ideal_Xm, Id2)
+    rho_out =  ((Proj*rho*Proj.dag())/((Proj*rho*Proj.dag()).tr())).ptrace([0, 2])
     return rho_out
 
 def measure_qudit_noclick_QUBE_DJ(rho, Oracle_group, tdi_noise = 0):
