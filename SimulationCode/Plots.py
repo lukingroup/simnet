@@ -8,7 +8,7 @@ import matplotlib as mpl
 """ Bell state tomography """
 def bell_state_barplotZZ(data):
 
-    fig, ax = plt.subplots(figsize=[14, 8], nrows=1, ncols=1)
+    fig, ax = plt.subplots(figsize=[6, 4], nrows=1, ncols=1)
     ax.set_title("ZZ")
     ax.bar(np.arange(4), data, color = 'lightpink', edgecolor='lightpink', alpha=.5)
     ax.bar(np.arange(4), [0.5, 0, 0, 0.5], fill=False, color = 'hotpink', edgecolor='hotpink', alpha=.5)
@@ -19,7 +19,7 @@ def bell_state_barplotZZ(data):
 
 def bell_state_barplotXX(data):
 
-    fig, ax = plt.subplots(figsize=[14, 8], nrows=1, ncols=1)
+    fig, ax = plt.subplots(figsize=[6, 4], nrows=1, ncols=1)
     ax.set_title("XX")
     ax.bar(np.arange(4), data, color = 'lightpink', edgecolor='lightpink', alpha=.5)
     ax.bar(np.arange(4), [0, 0.5, 0.5, 0], fill=False, color = 'hotpink', edgecolor='hotpink', alpha=.5)
@@ -30,7 +30,7 @@ def bell_state_barplotXX(data):
 
 def bell_state_barplotYY(data):
 
-    fig, ax = plt.subplots(figsize=[14, 8], nrows=1, ncols=1)
+    fig, ax = plt.subplots(figsize=[6, 4], nrows=1, ncols=1)
     ax.set_title("YY")
     ax.bar(np.arange(4), data, color = 'lightpink', edgecolor='lightpink', alpha=.5)
     ax.bar(np.arange(4), [0.5, 0, 0, 0.5], fill=False, color = 'hotpink', edgecolor='hotpink', alpha=.5)
@@ -683,6 +683,143 @@ def plot_from_rho(rho, title, filename, color, ON):
 
     plt.show()
     fig.savefig(filename, bbox_inches='tight', dpi=300)
+### for Hadamart gate
+def plot_from_rho_Had(rho, title, filename, color, client):
+
+    if client == True:
+        target = (241/255, 95/255, 88/255)
+        start = (1,1,1)
+        diff = np.array([1-241/255, 1-95/255, 1-88/255])
+        diff = diff/np.max(diff)
+
+    elif client == False:
+        target = (116/255, 48/255, 98/255)
+        start = (1,1,1)
+        diff = np.array([1-116/255, 1-48/255, 1-98/255])
+        diff = diff/np.max(diff)
+
+    plt.rcParams.update({'font.size': 20, 'axes.linewidth': 1})
+    fig = plt.figure(figsize=(10,10))
+    ax = fig.add_subplot(projection='3d')
+    ax.view_init(azim=-70, elev=15)
+    ax.set_proj_type('ortho')
+
+    xedges = np.array([0, 1, 2])
+    yedges = np.array([0, 1, 2])
+
+    # Construct arrays for the anchor positions of the 16 bars.
+    xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
+    xpos = xpos.ravel()
+    ypos = ypos.ravel()
+    zpos = 0
+
+    # Construct arrays with the dimensions for the 16 bars.
+    dx = dy = 0.75 * np.ones_like(zpos)
+
+    hist = np.zeros([2,2])
+
+    for ii in range(2):
+        for jj in range(2):
+            hist[ii,jj] = np.abs(rho[ii,jj])
+            # print(hist[ii,jj])
+
+    dz = hist.ravel()
+
+    cmap = plt.cm.get_cmap(color) # Get desired colormap - you can change this!
+
+    N = 100
+    color_list = []
+    bounds = np.linspace(0,1,N)
+
+    for ii in range(N):
+        color_list.append((start[0] - diff[0]*ii/N, start[1] - diff[1]*ii/N, start[2] - diff[2]*ii/N))
+
+    cmap = mpl.colors.ListedColormap(color_list)
+    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+
+
+    max_height = 1  # get range of colorbars so we can normalize
+    min_height = 0
+    # scale each z to [0,1], and get their rgb values
+    rgba = [cmap((k-min_height)/max_height) for k in dz] 
+
+    ax.bar3d(xpos, ypos, zpos, dx, dy, dz, zsort='average', linestyle='-', linewidth=1, edgecolor='k', color=rgba, shade=False)
+
+
+    xedges = np.array([0, 1, 2])
+    yedges = np.array([0, 1, 2])
+
+    if client == True:
+        print("TRue")
+        hist = np.array([[1, 0],
+                        [0, 0]])
+
+    elif client == False:
+        print("hi")
+        hist = np.array([[0.5, 0],
+                        [0, 0.5]])
+    
+
+    zpos_hist = np.abs(np.real(rho[:]))
+    dz_hist = hist - np.abs(np.real(rho[:]))
+    # print('zpos_hist', zpos_hist)
+    # print('dz_hist', dz_hist)
+
+
+    # Construct arrays for the anchor positions of the 16 bars.
+    xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
+    xpos = xpos.ravel()
+    ypos = ypos.ravel()
+    zpos = zpos_hist.ravel()
+
+    # Construct arrays with the dimensions for the 4 bars.
+    dx = dy = 0.75 * np.ones_like(zpos)
+    dz = hist.ravel()
+
+    dz = dz_hist.ravel()
+
+    ax.bar3d(xpos, ypos, zpos, dx, dy, dz, zsort='min', linestyle='--', linewidth=1, edgecolor='grey', color=(0, 0, 1, 0))
+
+
+    ax.plot([0.05,0.05],[0.05,0.05],[-0.01,1], color='k', linewidth=1)
+    #ax.plot([0.0,0.0],[2.3,4.3],[0,0.5], color='k', linewidth=1.5)
+
+
+    ax.set_zticks([0, 0.5, 1])
+    ax.set_zlim([0,1])
+    # ax.set_zticklabels(["0", "", "1"])
+
+    ax.set_xticks([0.5, 1.5])
+    ax.set_xlim([0.09,2.2])
+    # ax.set_xticklabels(["$-Y$", "$+Y$"])
+
+    ax.set_yticks([0.5, 1.5])
+    ax.set_ylim([0.09,2.2])
+    # ax.set_yticklabels(["$-Y$", "$+Y$"])
+
+    ax.w_xaxis.set_pane_color((0, 0, 0, 0))
+    ax.w_yaxis.set_pane_color((0, 0, 0, 0))
+    ax.w_zaxis.set_pane_color((0, 0, 0, 0))
+    ax.w_zaxis.edge = 0
+
+    ax.xaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+    ax.yaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+    ax.zaxis._axinfo["grid"]['color'] =  (0,0,0,1)
+    ax.zaxis._axinfo["grid"]['linewidth'] =  1
+    ax.zaxis._axinfo["tick"]['lenght'] =  0
+
+    ax.xaxis.set_tick_params(length=0)
+    ax.tick_params(color=(0,0,0,0))
+
+    ax.w_zaxis.linewidth =  1
+    cbar = fig.colorbar(plt.cm.ScalarMappable(cmap=cmap), ax=ax, fraction=0.04, pad=0.04, aspect=8)
+    cbar.set_ticks([0, 1])
+    cbar.set_ticklabels(["0", "1"])
+
+    ax.set_title(title)
+
+    plt.show()
+    fig.savefig(filename, bbox_inches='tight', dpi=300)
 
 ### density matrix bar plots for two-qubit gates
 def plot_from_rho_intranode_client(rho, title, filename, color, ON):
@@ -1269,6 +1406,7 @@ def plot_from_rho_internode_server(rho, title, filename, color, ON):
 
 def plot_from_rho_internode_client(rho, title, filename, color, ON):
 
+
     # not sensitive to imaginary elements of the density matrix
     plt.rcParams.update({'font.size': 20, 'axes.linewidth': 1.5})
 
@@ -1462,3 +1600,32 @@ def plot_from_rho_internode_client(rho, title, filename, color, ON):
 
     plt.show()
     fig.savefig(filename, bbox_inches='tight', dpi=300)
+
+### For gate set tomography 
+
+def plot_chi_matrix(chi):
+    """
+    Plots the real and imaginary parts of the chi matrix with adjusted color scales.
+    """
+    # If chi is a Qobj, convert it to a NumPy array
+    if hasattr(chi, 'full'):
+        chi_data = chi.full()
+    else:
+        chi_data = chi
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+    # Plot the real part
+    im1 = axes[0].imshow(np.real(chi_data), cmap='viridis', interpolation='nearest')
+    axes[0].set_title('Real Part of Chi Matrix')
+    fig.colorbar(im1, ax=axes[0])
+
+    # Plot the imaginary part with adjusted color scale
+    # Set vmin and vmax to zero to display a uniform color
+    im2 = axes[1].imshow(np.imag(chi_data), cmap='viridis', interpolation='nearest', vmin=0, vmax=0)
+    axes[1].set_title('Imaginary Part of Chi Matrix')
+    fig.colorbar(im2, ax=axes[1])
+
+    plt.tight_layout()
+    plt.show()
+

@@ -59,6 +59,24 @@ rho_ideal_Zp = qt.ket2dm(psi_ideal_Zp)
 psi_ideal_Zm = qt.basis(2, 1)
 rho_ideal_Zm = qt.ket2dm(psi_ideal_Zm) 
 
+# Bell state |Φ+> = (|00> + |11>)/√2
+phi_plus = (qt.tensor(qt.basis(2, 0), qt.basis(2, 0)) +
+            qt.tensor(qt.basis(2, 1), qt.basis(2, 1))).unit()
+
+# Bell state |Φ-> = (|00> - |11>)/√2
+phi_minus = (qt.tensor(qt.basis(2, 0), qt.basis(2, 0)) -
+             qt.tensor(qt.basis(2, 1), qt.basis(2, 1))).unit()
+
+# Bell state |Ψ+> = (|01> + |10>)/√2
+psi_plus = (qt.tensor(qt.basis(2, 0), qt.basis(2, 1)) +
+            qt.tensor(qt.basis(2, 1), qt.basis(2, 0))).unit()
+
+# Bell state |Ψ-> = (|01> - |10>)/√2
+psi_minus = (qt.tensor(qt.basis(2, 0), qt.basis(2, 1)) -
+             qt.tensor(qt.basis(2, 1), qt.basis(2, 0))).unit()
+
+# Collect all Bell states in a list for convenience
+bell_states = [phi_plus, phi_minus, psi_plus, psi_minus]
 
 ##################################################################
 ##################### MW and RF operations ###################
@@ -320,6 +338,139 @@ def siv_beamsplitter_si29(cav_refl, contrast):
 
     return oper1, oper2
 
+""" Electron Photon Entaglement beamsplitter of the first node for serial ee entanglement """
+def siv_beamsplitter_ee_e1_serial_(cav_refl, contrast):
+
+    ## given complex reflection and transmission (in amplitude not intensity), and two lowering operators
+    ## return the beam splitter operator
+    
+    #cavity outputs for A and B
+    if contrast == 'real':
+        r1_up = cav_refl['refl_refl']
+        r1_down = cav_refl['nonrefl_refl']
+        sc = cav_refl['refl_sc']
+        transm = cav_refl['refl_tr']
+        nsc = cav_refl['nonrefl_sc']
+        ntransm = cav_refl['nonrefl_tr']
+        
+    elif contrast == 'perfect':
+        r1_up = 1
+        r1_down = 0
+        sc = 0
+        transm = 0
+        nsc = 0
+        ntransm = 1
+
+    #commonly used beam splitter operations
+    ## a_m_k destroy the mth mode out of k modes
+
+    #interfere early and late
+    a_1_2 = qt.tensor(qt.destroy(N), IdN)
+    a_2_2 = qt.tensor(IdN, qt.destroy(N))
+
+    # loss and reflection
+    a_1_3 = qt.tensor(qt.destroy(N), IdN, IdN)
+    a_2_3 = qt.tensor(IdN, qt.destroy(N), IdN)
+    a_3_3 = qt.tensor(IdN, IdN, qt.destroy(N))
+
+    ## transmission and scattering beamsplitter
+    a_1_4 = qt.tensor(qt.destroy(N), IdN, IdN, IdN)
+    a_4_4 = qt.tensor(IdN, IdN, IdN, qt.destroy(N))
+    
+    ## EARLY BIN INTERACTS WITH THE SIV
+    theta1_up = np.arccos(np.sqrt(1 - abs(r1_up)**2))
+    phase1_up_1 = 0 - np.angle(r1_up)
+    phase1_up_2 = 0 + np.angle(r1_up)
+
+    theta1_down = np.arccos(np.sqrt(1 - abs(r1_down)**2))
+    phase1_down_1 = 0 - np.angle(r1_down)
+    phase1_down_2 = 0 + np.angle(r1_down)
+
+    # Early Reflection and loss channels
+    bs1_up = (((-1j*phase1_up_1/2)*(a_1_3.dag()*a_1_3 - a_3_3.dag()*a_3_3)).expm()*\
+                (-theta1_up*(a_1_3.dag()*a_3_3 - a_3_3.dag()*a_1_3)).expm()*\
+                ((-1j*phase1_up_2/2)*(a_1_3.dag()*a_1_3 - a_3_3.dag()*a_3_3)).expm())
+
+    bs1_down = (((-1j*phase1_down_1/2)*(a_1_3.dag()*a_1_3 - a_3_3.dag()*a_3_3)).expm()*\
+                (-theta1_down*(a_1_3.dag()*a_3_3 - a_3_3.dag()*a_1_3)).expm()*\
+                ((-1j*phase1_down_2/2)*(a_1_3.dag()*a_1_3 - a_3_3.dag()*a_3_3)).expm())
+
+    bs2_up = general_BS(sc, transm, a_1_4, a_4_4)
+    bs2_down = general_BS(nsc, ntransm, a_1_4, a_4_4)
+
+    #operation to reflect early bin
+    oper1 = qt.tensor(qt.ket2dm(qt.basis(2, 0)), Id2, bs1_up) + qt.tensor(qt.ket2dm(qt.basis(2, 1)), Id2, bs1_down)
+    #operation to split transmission and scattering for early bin
+    oper2 = qt.tensor(qt.ket2dm(qt.basis(2, 0)), Id2, bs2_up) + qt.tensor(qt.ket2dm(qt.basis(2, 1)), Id2, bs2_down)
+
+    return oper1, oper2
+
+""" Electron Photon Entaglement beamsplitter of the second node for serial ee entanglement """
+def siv_beamsplitter_ee_e2_serial_(cav_refl, contrast):
+
+    ## given complex reflection and transmission (in amplitude not intensity), and two lowering operators
+    ## return the beam splitter operator
+    
+    #cavity outputs for A and B
+    if contrast == 'real':
+        r1_up = cav_refl['refl_refl']
+        r1_down = cav_refl['nonrefl_refl']
+        sc = cav_refl['refl_sc']
+        transm = cav_refl['refl_tr']
+        nsc = cav_refl['nonrefl_sc']
+        ntransm = cav_refl['nonrefl_tr']
+        
+    elif contrast == 'perfect':
+        r1_up = 1
+        r1_down = 0
+        sc = 0
+        transm = 0
+        nsc = 0
+        ntransm = 1
+
+    #commonly used beam splitter operations
+    ## a_m_k destroy the mth mode out of k modes
+
+    #interfere early and late
+    a_1_2 = qt.tensor(qt.destroy(N), IdN)
+    a_2_2 = qt.tensor(IdN, qt.destroy(N))
+
+    # loss and reflection
+    a_1_3 = qt.tensor(qt.destroy(N), IdN, IdN)
+    a_2_3 = qt.tensor(IdN, qt.destroy(N), IdN)
+    a_3_3 = qt.tensor(IdN, IdN, qt.destroy(N))
+
+    ## transmission and scattering beamsplitter
+    a_1_4 = qt.tensor(qt.destroy(N), IdN, IdN, IdN)
+    a_4_4 = qt.tensor(IdN, IdN, IdN, qt.destroy(N))
+    
+    ## EARLY BIN INTERACTS WITH THE SIV
+    theta1_up = np.arccos(np.sqrt(1 - abs(r1_up)**2))
+    phase1_up_1 = 0 - np.angle(r1_up)
+    phase1_up_2 = 0 + np.angle(r1_up)
+
+    theta1_down = np.arccos(np.sqrt(1 - abs(r1_down)**2))
+    phase1_down_1 = 0 - np.angle(r1_down)
+    phase1_down_2 = 0 + np.angle(r1_down)
+
+    # Early Reflection and loss channels
+    bs1_up = (((-1j*phase1_up_1/2)*(a_1_3.dag()*a_1_3 - a_3_3.dag()*a_3_3)).expm()*\
+                (-theta1_up*(a_1_3.dag()*a_3_3 - a_3_3.dag()*a_1_3)).expm()*\
+                ((-1j*phase1_up_2/2)*(a_1_3.dag()*a_1_3 - a_3_3.dag()*a_3_3)).expm())
+
+    bs1_down = (((-1j*phase1_down_1/2)*(a_1_3.dag()*a_1_3 - a_3_3.dag()*a_3_3)).expm()*\
+                (-theta1_down*(a_1_3.dag()*a_3_3 - a_3_3.dag()*a_1_3)).expm()*\
+                ((-1j*phase1_down_2/2)*(a_1_3.dag()*a_1_3 - a_3_3.dag()*a_3_3)).expm())
+
+    bs2_up = general_BS(sc, transm, a_1_4, a_4_4)
+    bs2_down = general_BS(nsc, ntransm, a_1_4, a_4_4)
+
+    #operation to reflect early bin
+    oper1 = qt.tensor(Id2, qt.ket2dm(qt.basis(2, 0)), bs1_up) + qt.tensor(Id2, qt.ket2dm(qt.basis(2, 1)), bs1_down)
+    #operation to split transmission and scattering for early bin
+    oper2 = qt.tensor(Id2, qt.ket2dm(qt.basis(2, 0)), bs2_up) + qt.tensor(Id2, qt.ket2dm(qt.basis(2, 1)), bs2_down)
+
+    return oper1, oper2
 ##################################################################
 ##################### Spin Photon gates ##########################
 
@@ -542,6 +693,74 @@ def interfere_qubit_with_LO(rho, mu_LO, phi_LO):
     }
 
     return counts, rho_2.ptrace([0, 1])
+
+""" Add linear loss for a time-bin photonic qubit tensored with a two qubits el and el """
+def loss_photonqubit_ee_serial(rho, eff):
+
+    bs_e = general_BS(1j*np.sqrt(1 - eff), np.sqrt(eff), a_1_3, a_3_3)
+    bs_l = general_BS(1j*np.sqrt(1 - eff), np.sqrt(eff), a_2_3, a_3_3)
+
+    #operation of BS1 50/50 on early reflected beam
+    oper_e = qt.tensor(Id2, Id2, bs_e)
+    rho_1 = (oper_e*(qt.tensor(rho, qt.fock_dm(N, 0)))*oper_e.dag()).ptrace([0, 1, 2, 3])
+
+    #operation of BS1 50/50 on late reflected beam
+    oper_l = qt.tensor(Id2, Id2, bs_l)
+    rho_2 = (oper_l*(qt.tensor(rho_1, qt.fock_dm(N, 0)))*oper_l.dag()).ptrace([0, 1, 2, 3])
+    
+    # print('The number of photons after loss =', (Noperator*rho_2.ptrace([1])).tr() + (Noperator*rho_2.ptrace([2])).tr())
+
+    return rho_2
+
+def phi_photon_measurement_ee_serial(rho, phi, tdi_noise = 0):
+
+    # define a TDI
+    ratio = np.random.normal(loc=0.5, scale=0*0.1*0.5)
+    angle = np.random.normal(loc=2*np.pi + tdi_noise, scale=0*0.1*2*np.pi)
+    r = np.exp(1j*(angle + phi))*np.sqrt(ratio)
+    if np.abs(r) > 1:
+        r = 1
+    
+    bs_5050_el_r = general_BS(r, np.sqrt(1-(abs(r))**2), a_1_2, a_2_2)
+    
+    #operation of interfering early and late bins on a 50/50 BS
+    oper7 = qt.tensor(Id2, Id2, bs_5050_el_r)
+    rho_13 = oper7*rho*oper7.dag()
+    
+    # measure (in blind experiment we selected for 1 photon events)
+    Pj_01 = qt.composite(Id2, Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 1)))  # removed Id2
+    # Pj_02 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 2)))
+    # Pj_03 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 0)), qt.ket2dm(qt.basis(N, 3)))
+    
+    Pj_10 = qt.composite(Id2, Id2, qt.ket2dm(qt.basis(N, 1)), qt.ket2dm(qt.basis(N, 0)))  # removed Id2
+    # Pj_20 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 2)), qt.ket2dm(qt.basis(N, 0)))
+    # Pj_30 = qt.composite(Id2, qt.ket2dm(qt.basis(N, 3)), qt.ket2dm(qt.basis(N, 0)))
+    
+    #overall
+    P_apd1 = Pj_01 #+ Pj_02 + Pj_03 # apd1 fires -> late time-bin
+    P_apd2 = Pj_10 #+ Pj_20 + Pj_30 # apd2 fires -> early time-bin
+    
+    #Final density matrix of the electron-photon state
+    rho_final_b_apd1 = ((P_apd1*rho_13*P_apd1.dag())/(P_apd1*rho_13*P_apd1.dag()).tr()).ptrace([0, 1]) # spin state left over after apd 1
+    rho_final_b_apd2 = ((P_apd2*rho_13*P_apd2.dag())/(P_apd2*rho_13*P_apd2.dag()).tr()).ptrace([0, 1]) # spin state left over after apd2
+
+    # probability of each apd firing
+    brate_apd_1 = (P_apd1*rho_13*P_apd1.dag()).tr()
+    brate_apd_2 = (P_apd2*rho_13*P_apd2.dag()).tr()
+    bnorm_apd_rates = brate_apd_1 + brate_apd_2
+    bprob_apd1 = brate_apd_1 / bnorm_apd_rates # probability of apd1 firing
+    bprob_apd2 = brate_apd_2 / bnorm_apd_rates # probability of apd2 firing
+    if np.abs(1 - (bprob_apd1 + bprob_apd2)) < 0.001: 
+        pass   #this is in case trace above yields an approximation, in which case probs wont sum to 1 which yields error at choice
+    else:
+        return "Error: probabilities of apd1 and apd2 firing do not sum to 1"
+    # probabilistic projective measurement
+    quantum_measurement = np.random.choice([1,2], p=[bprob_apd1, bprob_apd2])
+    if quantum_measurement == 1:
+        spin_state = rho_final_b_apd1
+    elif quantum_measurement == 2:
+        spin_state = rho_final_b_apd2
+    return spin_state, quantum_measurement-1, brate_apd_1, brate_apd_2, brate_apd_1 + brate_apd_2 # apd1 fires --> m = 1, apd2 fires --> m = 0
 
 ##################################################################
 ##################### Fidelity errors  #########################

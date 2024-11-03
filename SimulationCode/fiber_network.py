@@ -26,3 +26,17 @@ class FiberNetwork:
         self.detection_eff = self.fibercoupling_eff*self.aom_eff*self.tdi_eff*self.snspd_eff
         return self.detection_eff
     
+    def parallel_telescope(self):
+        
+        self.fibercoupling_eff_1  = 1
+        self.fibercoupling_eff_2  = 1
+
+        self.link_eff_1 = self.fibercoupling_eff_1
+        self.link_eff_2 = self.fibercoupling_eff_2
+
+        self.snspd_eff_1  = 1
+        self.snspd_eff_2  = 1
+
+        self.detection_eff_1 = self.snspd_eff_1
+        self.detection_eff_2 = self.snspd_eff_2
+
