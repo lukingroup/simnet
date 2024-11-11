@@ -339,7 +339,7 @@ def siv_beamsplitter_si29(cav_refl, contrast):
     return oper1, oper2
 
 """ Electron Photon Entaglement beamsplitter of the first node for serial ee entanglement """
-def siv_beamsplitter_ee_e1_serial_(cav_refl, contrast):
+def siv_beamsplitter_ee_e1_serial(cav_refl, contrast):
 
     ## given complex reflection and transmission (in amplitude not intensity), and two lowering operators
     ## return the beam splitter operator
