@@ -15,8 +15,6 @@ import pandas as pd
 import datetime
 from qutip.qip.operations import *
 from qutip.qip.circuit import *
-
-
 import qutip as qt
   
 class BlindComputing:

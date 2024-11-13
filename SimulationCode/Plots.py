@@ -203,10 +203,12 @@ def plot_from_rho_TXT(rho, title, filename, color, client):
     ax.set_ylim([0.09,2.2])
     # ax.set_yticklabels(["$-Y$", "$+Y$"])
 
-    ax.w_xaxis.set_pane_color((0, 0, 0, 0))
-    ax.w_yaxis.set_pane_color((0, 0, 0, 0))
-    ax.w_zaxis.set_pane_color((0, 0, 0, 0))
-    ax.w_zaxis.edge = 0
+    ax.xaxis.pane.set_edgecolor('w')
+    ax.xaxis.pane.set_alpha(0.0)
+    ax.yaxis.pane.set_edgecolor('w')
+    ax.yaxis.pane.set_alpha(0.0)
+    ax.zaxis.pane.set_edgecolor('w')
+    ax.zaxis.pane.set_alpha(0.0)
 
     ax.xaxis._axinfo["grid"]['color'] =  (1,1,1,0)
     ax.yaxis._axinfo["grid"]['color'] =  (1,1,1,0)
@@ -822,394 +824,378 @@ def plot_from_rho_Had(rho, title, filename, color, client):
     fig.savefig(filename, bbox_inches='tight', dpi=300)
 
 ### density matrix bar plots for two-qubit gates
-def plot_from_rho_intranode_client(rho, title, filename, color, ON):
-
-    # not sensitive to imaginary elements of the density matrix
-    plt.rcParams.update({'font.size': 20, 'axes.linewidth': 1.5})
-
-
-    fig = plt.figure(figsize=(10,10))
-    ax = fig.add_subplot(projection='3d')
-    ax.view_init(azim=-70, elev=25)
-    ax.set_proj_type('ortho')
-
-    xedges = np.array([0, 1, 2, 3, 4])
-    yedges = np.array([0, 1, 2, 3, 4])
-
-    # Construct arrays for the anchor positions of the 16 bars.
-    xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
-    xpos = xpos.ravel()
-    ypos = ypos.ravel()
-    zpos = 0
-
-    # Construct arrays with the dimensions for the 16 bars.
-    dx = dy = 0.75 * np.ones_like(zpos)
-
-    hist = np.zeros([4,4])
-
-    for ii in range(4):
-        for jj in range(4):
-            hist[ii,jj] = np.abs(np.abs(rho[ii,jj]))
-
-    dz = hist.ravel()
-
-    #cmap = plt.cm.get_cmap(color) # Get desired colormap - you can change this!
-    
-    target = color
-    start = (1,1,1)
-    diff = np.array([1-target[0], 1-target[1], 1-target[2]])
-    diff = diff/np.max(diff)
-
-    N = 100
-    color_list = []
-    bounds = np.linspace(0,1,N)
-
-    for ii in range(N):
-        color_list.append((start[0] - diff[0]*ii/N, start[1] - diff[1]*ii/N, start[2] - diff[2]*ii/N))
-
-    cmap = mpl.colors.ListedColormap(color_list)
-    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-
-    if ON:
-        max_height = 0.5  # get range of colorbars so we can normalize
-    else:
-        max_height = 1.0
-    min_height = 0
-    # scale each z to [0,1], and get their rgb values
-    rgba = [cmap((k-min_height)/max_height) for k in dz] 
-
-    xpos_ori, ypos_ori, zpos_ori, dx_ori, dy_ori, dz_ori \
-        = xpos, ypos, zpos, dx.copy(), dy.copy(), dz.copy()
-#     ax.bar3d(xpos, ypos, zpos, dx, dy, dz, zsort='average', linestyle='-', linewidth=1.5, edgecolor='k', color=rgba, shade=False)
-
-
-    xedges = np.array([0, 3, 6])
-    yedges = np.array([0, 3, 6])
-
-    if ON:
-        hist = np.array([[0.5,0,0,0.5],
-                         [0,0,0,0],
-                         [0,0,0,0],
-                         [0.5,0,0,0.5]])
-        
-        zpos_hist = np.abs(np.real(rho))
-        dz_hist = hist - np.abs(np.real(rho))
-
-        # Construct arrays for the anchor positions of the 16 bars.
-#         xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
-        xpos, ypos = np.meshgrid(np.array([0, 1, 2, 3]) + 0.25, np.array([0, 1, 2, 3]) + 0.25, indexing="ij")
-        xpos = xpos.ravel()
-        ypos = ypos.ravel()
-        zpos = zpos_hist.ravel()
-
-        # Construct arrays with the dimensions for the 16 bars.
-        dx = dy = 0.75 * np.ones_like(zpos)
-        dz = hist.ravel()
-
-        hist = 0.5*np.ones([4,4])
-
-        dz = dz_hist.ravel()
-
-        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, zsort='min', linestyle='--', linewidth=1.5, edgecolor='grey', color=(0, 0, 1, 0))
-
-
-        ax.plot([0,0],[0,0],[-0.01,1.0], color='k', linewidth=1.5)
-        ax.plot([0.0,0.0],[4.3,4.3],[0,1.0], color='k', linewidth=1.5)
-
-
-        ax.set_zticks([0, 0.5, 1.0])
-        ax.set_zlim([0,1.0])
-        ax.set_zticklabels(["0", "", "1"])
-
-        ax.set_xticks([0.5, 1.5, 2.5, 3.5])
-        ax.set_xlim([0.09,4.2])
-        ax.set_xticklabels(["$- -$", "$- +$", "$+ -$", "$+ +$"])
-
-        ax.set_yticks([0.5, 1.5, 2.5, 3.5])
-        ax.set_ylim([0.09,4.2])
-        ax.set_yticklabels(["$- -$", "$- +$", "$+ -$", "$+ +$"])
-
-        ax.w_xaxis.set_pane_color((0, 0, 0, 0))
-        ax.w_yaxis.set_pane_color((0, 0, 0, 0))
-        ax.w_zaxis.set_pane_color((0, 0, 0, 0))
-        ax.w_zaxis.edge = 0
-
-        ax.xaxis._axinfo["grid"]['color'] =  (1,1,1,0)
-        ax.yaxis._axinfo["grid"]['color'] =  (1,1,1,0)
-        ax.zaxis._axinfo["grid"]['color'] =  (0,0,0,1)
-        ax.zaxis._axinfo["grid"]['linewidth'] =  1.5
-        ax.zaxis._axinfo["tick"]['lenght'] =  0
-
-        ax.xaxis.set_tick_params(length=0)
-        ax.tick_params(color=(0,0,0,0))
-
-        ax.w_zaxis.linewidth =  1.5
-        cbar = fig.colorbar(plt.cm.ScalarMappable(cmap=cmap), ax=ax, fraction=0.04, pad=0.04, aspect=8)
-        cbar.set_ticks([0, 1])
-        cbar.set_ticklabels(["0", "1.0"])
-
-    else:
-        hist = np.array([[0,0,0,0],
-                         [0,0,0,0],
-                         [0,0,0,0],
-                         [0,0,0,1]])
-        
-        zpos_hist = np.abs(np.real(rho))
-        dz_hist = hist - np.abs(np.real(rho))
-
-        # Construct arrays for the anchor positions of the 16 bars.
-#         xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
-        xpos, ypos = np.meshgrid(np.array([0, 1, 2, 3]) + 0.25, np.array([0, 1, 2, 3]) + 0.25, indexing="ij")
-        xpos = xpos.ravel()
-        ypos = ypos.ravel()
-        zpos = zpos_hist.ravel()
-
-        # Construct arrays with the dimensions for the 16 bars.
-        dx = dy = 0.75 * np.ones_like(zpos)
-        dz = hist.ravel()
-
-        hist = 0.5*np.ones([4,4])
-
-        dz = dz_hist.ravel()
-
-        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, zsort='min', linestyle='--', linewidth=1.5, edgecolor='grey', color=(0, 0, 1, 0))
-
-
-        ax.plot([0,0],[0,0],[-0.01,1.0], color='k', linewidth=1.5)
-        ax.plot([0.0,0.0],[4.3,4.3],[0,1.0], color='k', linewidth=1.5)
-
-
-        ax.set_zticks([0, 0.5, 1.0])
-        ax.set_zlim([0,1.0])
-        ax.set_zticklabels(["0", "", "1"])
-
-        ax.set_xticks([0.5, 1.5, 2.5, 3.5])
-        ax.set_xlim([0.09,4.2])
-        ax.set_xticklabels(["$- -$", "$- +$", "$+ -$", "$+ +$"])
-
-        ax.set_yticks([0.5, 1.5, 2.5, 3.5])
-        ax.set_ylim([0.09,4.2])
-        ax.set_yticklabels(["$- -$", "$- +$", "$+ -$", "$+ +$"])
-
-        ax.w_xaxis.set_pane_color((0, 0, 0, 0))
-        ax.w_yaxis.set_pane_color((0, 0, 0, 0))
-        ax.w_zaxis.set_pane_color((0, 0, 0, 0))
-        ax.w_zaxis.edge = 0
-
-        ax.xaxis._axinfo["grid"]['color'] =  (1,1,1,0)
-        ax.yaxis._axinfo["grid"]['color'] =  (1,1,1,0)
-        ax.zaxis._axinfo["grid"]['color'] =  (0,0,0,1)
-        ax.zaxis._axinfo["grid"]['linewidth'] =  1.5
-        ax.zaxis._axinfo["tick"]['lenght'] =  0
-
-        ax.xaxis.set_tick_params(length=0)
-        ax.tick_params(color=(0,0,0,0))
-
-        ax.w_zaxis.linewidth =  1.5
-        cbar = fig.colorbar(plt.cm.ScalarMappable(cmap=cmap), ax=ax, fraction=0.04, pad=0.04, aspect=8)
-        cbar.set_ticks([0, 1])
-        cbar.set_ticklabels(["0", "1.0"])
-        
-    ax.bar3d(xpos_ori, ypos_ori, zpos_ori, dx_ori, dy_ori, dz_ori, \
-             zsort='average', linestyle='-', linewidth=1.5, edgecolor='k', color=rgba, shade=False)
-    ax.set_title(title)
-
-
-    plt.show()
-    fig.savefig(filename, bbox_inches='tight', dpi=300)
-
 def plot_from_rho_intranode_server(rho, title, filename, color, ON):
 
-    # not sensitive to imaginary elements of the density matrix
+    # Not sensitive to imaginary elements of the density matrix
     plt.rcParams.update({'font.size': 20, 'axes.linewidth': 1.5})
 
-
-    fig = plt.figure(figsize=(10,10))
-    ax = fig.add_subplot(projection='3d')
+    # Create a new figure with a white background and reduced size
+    fig = plt.figure(figsize=(6, 6), facecolor='white')
+    ax = fig.add_subplot(projection='3d', facecolor='white')
     ax.view_init(azim=-70, elev=25)
     ax.set_proj_type('ortho')
 
     xedges = np.array([0, 1, 2, 3, 4])
     yedges = np.array([0, 1, 2, 3, 4])
 
-    # Construct arrays for the anchor positions of the 16 bars.
+    # Construct arrays for the anchor positions of the 16 bars
     xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
     xpos = xpos.ravel()
     ypos = ypos.ravel()
-    zpos = 0
+    zpos = np.zeros_like(xpos)
 
-    # Construct arrays with the dimensions for the 16 bars.
+    # Dimensions for the 16 bars
     dx = dy = 0.75 * np.ones_like(zpos)
 
-    hist = np.zeros([4,4])
+    hist = np.zeros([4, 4])
 
     for ii in range(4):
         for jj in range(4):
-            hist[ii,jj] = np.abs(np.abs(rho[ii,jj]))
+            hist[ii, jj] = np.abs(rho[ii, jj])
 
     dz = hist.ravel()
 
-    #cmap = plt.cm.get_cmap(color) # Get desired colormap - you can change this!
-    
+    # Create a custom colormap
     target = color
-    start = (1,1,1)
-    diff = np.array([1-target[0], 1-target[1], 1-target[2]])
-    diff = diff/np.max(diff)
+    start = (1, 1, 1)
+    diff = np.array([1 - target[0], 1 - target[1], 1 - target[2]])
+    diff = diff / np.max(diff)
 
     N = 100
     color_list = []
-    bounds = np.linspace(0,1,N)
+    bounds = np.linspace(0, 1, N)
 
     for ii in range(N):
-        color_list.append((start[0] - diff[0]*ii/N, start[1] - diff[1]*ii/N, start[2] - diff[2]*ii/N))
+        color_list.append((
+            start[0] - diff[0] * ii / N,
+            start[1] - diff[1] * ii / N,
+            start[2] - diff[2] * ii / N
+        ))
 
     cmap = mpl.colors.ListedColormap(color_list)
     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
 
     if ON:
-        max_height = 0.5  # get range of colorbars so we can normalize
+        max_height = 0.5  # Range for color normalization
     else:
         max_height = 1.0
     min_height = 0
-    # scale each z to [0,1], and get their rgb values
-    rgba = [cmap((k-min_height)/max_height) for k in dz] 
+    # Scale each z to [0,1], and get their rgba values
+    rgba = [cmap((k - min_height) / max_height) for k in dz]
 
-    xpos_ori, ypos_ori, zpos_ori, dx_ori, dy_ori, dz_ori \
-        = xpos, ypos, zpos, dx.copy(), dy.copy(), dz.copy()
-#     ax.bar3d(xpos, ypos, zpos, dx, dy, dz, zsort='average', linestyle='-', linewidth=1.5, edgecolor='k', color=rgba, shade=False)
-
+    xpos_ori, ypos_ori, zpos_ori = xpos.copy(), ypos.copy(), zpos.copy()
+    dx_ori, dy_ori, dz_ori = dx.copy(), dy.copy(), dz.copy()
 
     xedges = np.array([0, 3, 6])
     yedges = np.array([0, 3, 6])
 
     if ON:
-        hist = 0.5*np.ones([2,2])
+        hist_overlay = 0.5 * np.ones([2, 2])
 
+        zpos_hist = np.abs(np.real(rho[0:4:3, 0:4:3]))
+        dz_hist = hist_overlay - zpos_hist
 
-        zpos_hist = np.abs(np.real(rho[0:4:3,0:4:3]))
-        dz_hist = hist - np.abs(np.real(rho[0:4:3,0:4:3]))
-
-        # Construct arrays for the anchor positions of the 16 bars.
+        # Anchor positions for overlay bars
         xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
         xpos = xpos.ravel()
         ypos = ypos.ravel()
         zpos = zpos_hist.ravel()
 
-        # Construct arrays with the dimensions for the 16 bars.
         dx = dy = 0.75 * np.ones_like(zpos)
-        dz = hist.ravel()
-
-        hist = 0.5*np.ones([2,2])
-
         dz = dz_hist.ravel()
 
-        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, zsort='min', linestyle='--', linewidth=1.5, edgecolor='grey', color=(0, 0, 1, 0))
+        # Plot the overlay bars
+        ax.bar3d(
+            xpos, ypos, zpos, dx, dy, dz,
+            zsort='min', linestyle='--', linewidth=1.5,
+            edgecolor='grey', color=(0, 0, 1, 0)
+        )
 
-
-        ax.plot([0,0],[0,0],[-0.01,0.5], color='k', linewidth=1.5)
-        ax.plot([0.0,0.0],[4.3,4.3],[0,0.5], color='k', linewidth=1.5)
-
+        # Set axis labels and limits
+        ax.plot([0, 0], [0, 0], [-0.01, 0.5], color='k', linewidth=1.5)
+        ax.plot([0.0, 0.0], [4.3, 4.3], [0, 0.5], color='k', linewidth=1.5)
 
         ax.set_zticks([0, 0.25, 0.5])
-        ax.set_zlim([0,0.5])
+        ax.set_zlim([0, 0.5])
         ax.set_zticklabels(["0", "", "0.5"])
 
         ax.set_xticks([0.5, 1.5, 2.5, 3.5])
-        ax.set_xlim([0.09,4.2])
+        ax.set_xlim([0.09, 4.2])
         ax.set_xticklabels(["$+i+i$", "$+i-i$", "$-i +i$", "$-i-i$"])
 
         ax.set_yticks([0.5, 1.5, 2.5, 3.5])
-        ax.set_ylim([0.09,4.2])
+        ax.set_ylim([0.09, 4.2])
         ax.set_yticklabels(["$+i+i$", "$+i-i$", "$-i +i$", "$-i-i$"])
 
-        ax.w_xaxis.set_pane_color((0, 0, 0, 0))
-        ax.w_yaxis.set_pane_color((0, 0, 0, 0))
-        ax.w_zaxis.set_pane_color((0, 0, 0, 0))
-        ax.w_zaxis.edge = 0
-
-        ax.xaxis._axinfo["grid"]['color'] =  (1,1,1,0)
-        ax.yaxis._axinfo["grid"]['color'] =  (1,1,1,0)
-        ax.zaxis._axinfo["grid"]['color'] =  (0,0,0,1)
-        ax.zaxis._axinfo["grid"]['linewidth'] =  1.5
-        ax.zaxis._axinfo["tick"]['lenght'] =  0
-
-        ax.xaxis.set_tick_params(length=0)
-        ax.tick_params(color=(0,0,0,0))
-
-        ax.w_zaxis.linewidth =  1.5
-        cbar = fig.colorbar(plt.cm.ScalarMappable(cmap=cmap), ax=ax, fraction=0.04, pad=0.04, aspect=8)
-        cbar.set_ticks([0, 1])
-        cbar.set_ticklabels(["0", "1.0"])
-
     else:
-        hist = np.array([[0,0,0,0],
-                         [0,0,0,0],
-                         [0,0,0,0],
-                         [0,0,0,0]])
-        
-        zpos_hist = np.abs(np.real(rho))
-        dz_hist = hist - np.abs(np.real(rho))
+        hist_overlay = np.zeros([4, 4])
 
-        # Construct arrays for the anchor positions of the 16 bars.
-#         xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
-        xpos, ypos = np.meshgrid(np.array([0, 1, 2, 3]) + 0.25, np.array([0, 1, 2, 3]) + 0.25, indexing="ij")
+        zpos_hist = np.abs(np.real(rho))
+        dz_hist = hist_overlay - zpos_hist
+
+        # Anchor positions for overlay bars
+        xpos, ypos = np.meshgrid(
+            np.array([0, 1, 2, 3]) + 0.25,
+            np.array([0, 1, 2, 3]) + 0.25,
+            indexing="ij"
+        )
         xpos = xpos.ravel()
         ypos = ypos.ravel()
         zpos = zpos_hist.ravel()
 
-        # Construct arrays with the dimensions for the 16 bars.
         dx = dy = 0.75 * np.ones_like(zpos)
-        dz = hist.ravel()
-
-        hist = 0.5*np.ones([4,4])
-
         dz = dz_hist.ravel()
 
-        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, zsort='min', linestyle='--', linewidth=1.5, edgecolor='grey', color=(0, 0, 1, 0))
+        # Plot the overlay bars
+        ax.bar3d(
+            xpos, ypos, zpos, dx, dy, dz,
+            zsort='min', linestyle='--', linewidth=1.5,
+            edgecolor='grey', color=(0, 0, 1, 0)
+        )
 
-
-        ax.plot([0,0],[0,0],[-0.01,1.0], color='k', linewidth=1.5)
-        ax.plot([0.0,0.0],[4.3,4.3],[0,1.0], color='k', linewidth=1.5)
-
+        # Set axis labels and limits
+        ax.plot([0, 0], [0, 0], [-0.01, 1.0], color='k', linewidth=1.5)
+        ax.plot([0.0, 0.0], [4.3, 4.3], [0, 1.0], color='k', linewidth=1.5)
 
         ax.set_zticks([0, 0.5, 1.0])
-        ax.set_zlim([0,1.0])
+        ax.set_zlim([0, 1.0])
         ax.set_zticklabels(["0", "", "1"])
 
         ax.set_xticks([0.5, 1.5, 2.5, 3.5])
-        ax.set_xlim([0.09,4.2])
+        ax.set_xlim([0.09, 4.2])
         ax.set_xticklabels(["$- -$", "$- +$", "$+ -$", "$+ +$"])
 
         ax.set_yticks([0.5, 1.5, 2.5, 3.5])
-        ax.set_ylim([0.09,4.2])
+        ax.set_ylim([0.09, 4.2])
         ax.set_yticklabels(["$- -$", "$- +$", "$+ -$", "$+ +$"])
 
-        ax.w_xaxis.set_pane_color((0, 0, 0, 0))
-        ax.w_yaxis.set_pane_color((0, 0, 0, 0))
-        ax.w_zaxis.set_pane_color((0, 0, 0, 0))
-        ax.w_zaxis.edge = 0
+    # Draw the main bars
+    ax.bar3d(
+        xpos_ori, ypos_ori, zpos_ori, dx_ori, dy_ori, dz_ori,
+        zsort='average', linestyle='-', linewidth=1.5,
+        edgecolor='k', color=rgba, shade=False
+    )
 
-        ax.xaxis._axinfo["grid"]['color'] =  (1,1,1,0)
-        ax.yaxis._axinfo["grid"]['color'] =  (1,1,1,0)
-        ax.zaxis._axinfo["grid"]['color'] =  (0,0,0,1)
-        ax.zaxis._axinfo["grid"]['linewidth'] =  1.5
-        ax.zaxis._axinfo["tick"]['lenght'] =  0
+    # Update pane colors to white
+    white_color = (1.0, 1.0, 1.0, 1.0)
+    ax.xaxis.pane.set_facecolor(white_color)
+    ax.yaxis.pane.set_facecolor(white_color)
+    ax.zaxis.pane.set_facecolor(white_color)
 
-        ax.xaxis.set_tick_params(length=0)
-        ax.tick_params(color=(0,0,0,0))
+    # Set pane edge colors to black
+    ax.xaxis.pane.set_edgecolor('black')
+    ax.yaxis.pane.set_edgecolor('black')
+    ax.zaxis.pane.set_edgecolor('black')
 
-        ax.w_zaxis.linewidth =  1.5
-        cbar = fig.colorbar(plt.cm.ScalarMappable(cmap=cmap), ax=ax, fraction=0.04, pad=0.04, aspect=8)
-        cbar.set_ticks([0, 1])
-        cbar.set_ticklabels(["0", "1.0"])
-        
-    ax.bar3d(xpos_ori, ypos_ori, zpos_ori, dx_ori, dy_ori, dz_ori, \
-             zsort='average', linestyle='-', linewidth=1.5, edgecolor='k', color=rgba, shade=False)
+    # Set pane edge linewidths
+    ax.xaxis.pane.set_linewidth(1.0)
+    ax.yaxis.pane.set_linewidth(1.0)
+    ax.zaxis.pane.set_linewidth(1.0)
+
+    # Show gridlines if desired (set to True)
+    ax.grid(False)
+
+    # Customize tick parameters
+    ax.xaxis.set_tick_params(length=0)
+    ax.yaxis.set_tick_params(length=0)
+    ax.zaxis.set_tick_params(pad=5)
+
+    # Adjust the background color of the axes and figure to white
+    ax.set_facecolor('white')
+    fig.patch.set_facecolor('white')
+
+    # Add colorbar
+    cbar = fig.colorbar(
+        plt.cm.ScalarMappable(cmap=cmap),
+        ax=ax, fraction=0.04, pad=0.04, aspect=8
+    )
+    cbar.set_ticks([0, 1])
+    cbar.set_ticklabels(["0", "1.0"])
+
     ax.set_title(title)
-
 
     plt.show()
     fig.savefig(filename, bbox_inches='tight', dpi=300)
+
+def plot_from_rho_intranode_client(rho, title, filename, color, ON):
+
+    # Not sensitive to imaginary elements of the density matrix
+    plt.rcParams.update({'font.size': 20, 'axes.linewidth': 1.5})
+
+    # Create a new figure with a white background
+    fig = plt.figure(figsize=(6, 6), facecolor='white')
+    ax = fig.add_subplot(projection='3d', facecolor='white')
+    ax.view_init(azim=-70, elev=25)
+    ax.set_proj_type('ortho')
+
+    xedges = np.array([0, 1, 2, 3, 4])
+    yedges = np.array([0, 1, 2, 3, 4])
+
+    # Construct arrays for the anchor positions of the 16 bars.
+    xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
+    xpos = xpos.ravel()
+    ypos = ypos.ravel()
+    zpos = np.zeros_like(xpos)
+
+    # Construct arrays with the dimensions for the 16 bars.
+    dx = dy = 0.75 * np.ones_like(zpos)
+
+    hist = np.zeros([4, 4])
+
+    for ii in range(4):
+        for jj in range(4):
+            hist[ii, jj] = np.abs(rho[ii, jj])
+
+    dz = hist.ravel()
+
+    # Create a custom colormap
+    target = color
+    start = (1, 1, 1)
+    diff = np.array([1 - target[0], 1 - target[1], 1 - target[2]])
+    diff = diff / np.max(diff)
+
+    N = 100
+    color_list = []
+    bounds = np.linspace(0, 1, N)
+
+    for ii in range(N):
+        color_list.append((
+            start[0] - diff[0] * ii / N,
+            start[1] - diff[1] * ii / N,
+            start[2] - diff[2] * ii / N
+        ))
+
+    cmap = mpl.colors.ListedColormap(color_list)
+    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+
+    if ON:
+        max_height = 0.5  # Range for color normalization
+    else:
+        max_height = 1.0
+    min_height = 0
+    # Scale each z to [0,1], and get their rgba values
+    rgba = [cmap((k - min_height) / max_height) for k in dz]
+
+    xpos_ori, ypos_ori, zpos_ori = xpos, ypos, zpos.copy()
+    dx_ori, dy_ori, dz_ori = dx.copy(), dy.copy(), dz.copy()
+
+    if ON:
+        hist_overlay = np.array([
+            [0.5, 0, 0, 0.5],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0.5, 0, 0, 0.5]
+        ])
+
+        zpos_hist = np.abs(np.real(rho))
+        dz_hist = hist_overlay - zpos_hist
+
+        # Reconstruct arrays for the overlay bars
+        xpos, ypos = np.meshgrid(np.arange(4) + 0.25, np.arange(4) + 0.25, indexing="ij")
+        xpos = xpos.ravel()
+        ypos = ypos.ravel()
+        zpos = zpos_hist.ravel()
+
+        dx = dy = 0.75 * np.ones_like(zpos)
+        dz = dz_hist.ravel()
+
+        # Plot the overlay bars
+        ax.bar3d(
+            xpos, ypos, zpos, dx, dy, dz,
+            zsort='min', linestyle='--', linewidth=1.5,
+            edgecolor='grey', color=(0, 0, 1, 0)
+        )
+
+    else:
+        hist_overlay = np.array([
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 1]
+        ])
+
+        zpos_hist = np.abs(np.real(rho))
+        dz_hist = hist_overlay - zpos_hist
+
+        # Reconstruct arrays for the overlay bars
+        xpos, ypos = np.meshgrid(np.arange(4) + 0.25, np.arange(4) + 0.25, indexing="ij")
+        xpos = xpos.ravel()
+        ypos = ypos.ravel()
+        zpos = zpos_hist.ravel()
+
+        dx = dy = 0.75 * np.ones_like(zpos)
+        dz = dz_hist.ravel()
+
+        # Plot the overlay bars
+        ax.bar3d(
+            xpos, ypos, zpos, dx, dy, dz,
+            zsort='min', linestyle='--', linewidth=1.5,
+            edgecolor='grey', color=(0, 0, 1, 0)
+        )
+
+    # Draw the main bars
+    ax.bar3d(
+        xpos_ori, ypos_ori, zpos_ori, dx_ori, dy_ori, dz_ori,
+        zsort='average', linestyle='-', linewidth=1.5,
+        edgecolor='k', color=rgba, shade=False
+    )
+
+    # Set axis labels and limits
+    ax.plot([0, 0], [0, 0], [-0.01, 1.0], color='k', linewidth=1.5)
+    ax.plot([0.0, 0.0], [4.3, 4.3], [0, 1.0], color='k', linewidth=1.5)
+
+    ax.set_zticks([0, 0.5, 1.0])
+    ax.set_zlim([0, 1.0])
+    ax.set_zticklabels(["0", "", "1"])
+
+    ax.set_xticks([0.5, 1.5, 2.5, 3.5])
+    ax.set_xlim([0.09, 4.2])
+    ax.set_xticklabels(["$- -$", "$- +$", "$+ -$", "$+ +$"])
+
+    ax.set_yticks([0.5, 1.5, 2.5, 3.5])
+    ax.set_ylim([0.09, 4.2])
+    ax.set_yticklabels(["$- -$", "$- +$", "$+ -$", "$+ +$"])
+
+    # Update pane colors to white
+    ax.xaxis.pane.set_facecolor('white')
+    ax.yaxis.pane.set_facecolor('white')
+    ax.zaxis.pane.set_facecolor('white')
+
+    # Set pane edge colors to black to make cube edges visible
+    ax.xaxis.pane.set_edgecolor('black')
+    ax.yaxis.pane.set_edgecolor('black')
+    ax.zaxis.pane.set_edgecolor('black')
+
+    # Set pane edge linewidths if necessary
+    ax.xaxis.pane.set_linewidth(1.0)
+    ax.yaxis.pane.set_linewidth(1.0)
+    ax.zaxis.pane.set_linewidth(1.0)
+
+    # Optionally, show gridlines (set to False if you don't want them)
+    ax.grid(False)
+
+    # Customize tick parameters
+    ax.xaxis.set_tick_params(length=0)
+    ax.yaxis.set_tick_params(length=0)
+    ax.zaxis.set_tick_params(pad=5)
+
+    # Add colorbar
+    cbar = fig.colorbar(
+        plt.cm.ScalarMappable(cmap=cmap),
+        ax=ax, fraction=0.04, pad=0.04, aspect=8
+    )
+    cbar.set_ticks([0, 1])
+    cbar.set_ticklabels(["0", "1.0"])
+
+    ax.set_title(title)
+
+    # Set the background of the figure and axes to white
+    fig.patch.set_facecolor('white')
+    ax.set_facecolor('white')
+
+    plt.show()
+    fig.savefig(filename, bbox_inches='tight', dpi=300)
+
 
 def plot_from_rho_internode_server(rho, title, filename, color, ON):
 
