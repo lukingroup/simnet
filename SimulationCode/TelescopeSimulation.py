@@ -40,8 +40,8 @@ class TelescopeSimulation:
 
         # 'real'/'perfect' and 'stable'/'noisy'
         gates = set_mw_fidelities(fid = imperfections['mw'], noise = imperfections['mw_noise'], fidel_val = fidel_values_pi_pi2)
-        siv_beamsplitters1 = siv_beamsplitter_ee_e1_serial_(cav_refl_1, imperfections['contrast'])
-        siv_beamsplitters2 = siv_beamsplitter_ee_e2_serial_(cav_refl_2, imperfections['contrast'])
+        siv_beamsplitters1 = siv_beamsplitter_ee_e1_serial(cav_refl_1, imperfections['contrast'])
+        siv_beamsplitters2 = siv_beamsplitter_ee_e2_serial(cav_refl_2, imperfections['contrast'])
 
         alpha = np.sqrt(mu)
         early_time_bin = qt.tensor(qt.coherent(N, alpha/np.sqrt(2)), qt.coherent(N, 0))

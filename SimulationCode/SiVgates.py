@@ -406,7 +406,7 @@ def siv_beamsplitter_ee_e1_serial(cav_refl, contrast):
     return oper1, oper2
 
 """ Electron Photon Entaglement beamsplitter of the second node for serial ee entanglement """
-def siv_beamsplitter_ee_e2_serial_(cav_refl, contrast):
+def siv_beamsplitter_ee_e2_serial(cav_refl, contrast):
 
     ## given complex reflection and transmission (in amplitude not intensity), and two lowering operators
     ## return the beam splitter operator
@@ -567,6 +567,8 @@ def nucleus_photon_entaglement(SiV_beamsplitter, el_initial, si29_initial, cond_
 ##################################################################
 ##################### Measurements ###############################
 
+## ELectron-Photon tomography
+
 def el_photon_bell_state_Ztomography(rho):
 
     ## Only one apd fires - not the other
@@ -651,6 +653,34 @@ def fidelity_bases(tomography_output):
         }
         return fid
 
+## ELectron-electron tomography 
+
+def elel_bell_state_Ztomography(rho):
+    ZpZp = qt.fidelity(rho, qt.tensor(rho_ideal_Zp, rho_ideal_Zp))**2
+    ZpZm = qt.fidelity(rho, qt.tensor(rho_ideal_Zp, rho_ideal_Zm))**2
+    ZmZp = qt.fidelity(rho, qt.tensor(rho_ideal_Zm, rho_ideal_Zp))**2
+    ZmZm = qt.fidelity(rho, qt.tensor(rho_ideal_Zm, rho_ideal_Zm))**2
+    
+    ZZ = [ZpZp/(ZpZp+ZpZm+ZmZp+ZmZm), ZpZm/(ZpZp+ZpZm+ZmZp+ZmZm), ZmZp/(ZpZp+ZpZm+ZmZp+ZmZm), ZmZm/(ZpZp+ZpZm+ZmZp+ZmZm)]
+    return ZZ
+
+def elel_bell_state_Xtomography(rho):
+    XpXp = qt.fidelity(rho, qt.tensor(rho_ideal_Xp, rho_ideal_Xp))**2
+    XpXm = qt.fidelity(rho, qt.tensor(rho_ideal_Xp, rho_ideal_Xm))**2
+    XmXp = qt.fidelity(rho, qt.tensor(rho_ideal_Xm, rho_ideal_Xp))**2
+    XmXm = qt.fidelity(rho, qt.tensor(rho_ideal_Xm, rho_ideal_Xm))**2
+    XX = [XpXp/(XpXp+XpXm+XmXp+XmXm), XpXm/(XpXp+XpXm+XmXp+XmXm), XmXp/(XpXp+XpXm+XmXp+XmXm), XmXm/(XpXp+XpXm+XmXp+XmXm)]
+
+    return XX
+
+def elel_bell_state_Ytomography(rho):
+    YpYp = qt.fidelity(rho, qt.tensor(rho_ideal_Yp, rho_ideal_Yp))**2
+    YpYm = qt.fidelity(rho, qt.tensor(rho_ideal_Yp, rho_ideal_Ym))**2
+    YmYp = qt.fidelity(rho, qt.tensor(rho_ideal_Ym, rho_ideal_Yp))**2
+    YmYm = qt.fidelity(rho, qt.tensor(rho_ideal_Ym, rho_ideal_Ym))**2
+    
+    YY = [YpYp/(YpYp+YpYm+YmYp+YmYm), YpYm/(YpYp+YpYm+YmYp+YmYm), YmYp/(YpYp+YpYm+YmYp+YmYm), YmYm/(YpYp+YpYm+YmYp+YmYm)]
+    return YY
 #######################################################################################
 ##################### For telescope (maybe move it from here) #########################
 
