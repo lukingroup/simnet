@@ -120,7 +120,7 @@ network = FiberNetwork(siv)
 
 ## Data Storage
 
-Simulation results are stored in CSV format in the `OutputFiles` directory, organized by experiment type and date. The file naming convention includes relevant parameters and timestamps for easy identification.
+Simulation results can be stored in CSV format in the `OutputFiles` directory, organized by experiment type and date. The file naming convention includes relevant parameters and timestamps for easy identification.
 
 ## Contributing
 

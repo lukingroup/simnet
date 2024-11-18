@@ -271,6 +271,7 @@ def siv_beamsplitter(cav_refl, contrast):
     oper2 = qt.tensor(qt.ket2dm(qt.basis(2, 0)),bs2_up) + qt.tensor(qt.ket2dm(qt.basis(2, 1)),bs2_down)
     return oper1, oper2
 
+
 """ Electron Photon Entaglement beamsplitter with Si29 """
 def siv_beamsplitter_si29(cav_refl, contrast):
 
