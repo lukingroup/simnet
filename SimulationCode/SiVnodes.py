@@ -172,17 +172,3 @@ class SiV:
         print("new contrast", contrast)
         return
     
-
-# Create SiVs:
-# siv_a = SiV(kappa_in= 56*(10**3), kappa_w= (74 - 56)*(10**3), g=7.8*(10**3), wCav = (0)*(10**3), 
-#              wSiv = 110*(10**3), dwEl = 0.5*(10**3)) # G12
-# siv_b = SiV(kappa_in= 101*(10**3), kappa_w= 29*(10**3), g=3.19*(10**3), wCav = (0)*(10**3), 
-#              wSiv = 55.0*(10**3), dwEl = 0.5*(10**3)) # B16
-
-# contrast = siv_a.get_best_contrast()
-
-# siv_a.freq_optimum()
-
-# print("Contrast G12 at Best contrast of A: ", contrast_at_best_A(delta))
-# print("Contrast B16 at Best contrast of B : ", (np.abs(cav_refl(1 , output_optimums(delta)[1], delta)[3])**2)/(np.abs(cav_refl(1 , output_optimums(delta)[1], delta)[0])**2))
-#         return contrast

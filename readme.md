@@ -1,19 +1,22 @@
 # Quantum Network Simulation Package
 
+![example figure](Notebooks/FiguresJupyter/DoubleColumn_SubFig2.pdf)
+
+
 A Python-based simulation package designed for modeling quantum networking experiments using beam-splitters. This package was originally developed to simulate experiments for the Silicon-Vacancy (SiV) team.
 
 ## Overview
 
-This simulation toolkit enables researchers to model and analyze quantum optical networks, with a particular focus on beam-splitter-based experiments. It provides tools for simulating quantum state propagation through optical fiber networks and analyzing the resulting quantum states.
+This simulation toolkit enables simulating entangelemnt-based experiments for various multi-node quantum network topologies. It is designed for cavity-QED nodes with reflection based gates using weak coherent sources as photonic time-bins to build qubits and qudits. Each interaction step on the path of the time-bin is encoded as a beam splitter hamiltonian, which works in our case since number of ecitations is < 1. It provides tools for simulating quantum state propagation through optical fiber networks and analyzing the resulting quantum states.
 
 ## Features
 
-- Beam-splitter network simulation
-- Optical fiber transmission modeling
+- Beam-splitter operator based network simulation
 - Support for Silicon-Vacancy center experiments
 - Quantum state propagation calculations
 - Network topology configuration
 - Blind quantum computing simulations
+- Serial and parallel entangelment protocols using photonic qubits and qudits (e.g. d = 4)
 
 ## Installation
 
@@ -61,28 +64,27 @@ pip install -r requirements.txt
 The `SimulationCode` directory contains the core simulation components:
 
 #### fiber_network.py
-- Core simulation engine for quantum optical networks
-- Beam-splitter modeling functions
-- Fiber transmission calculations
-- Network topology management
-- Quantum state propagation algorithms
+- defines the network geometry
+- specifies all of the losses in the network: fiber coupling, frequency conversion, fiber loss, detection loss
+- specify if entanglement geometry is parallel vs serial (the default)
 
 #### SiVnodes.py
-- Silicon-Vacancy center modeling
-- Quantum state manipulation
-- Contrast calculations and optimization
-- Cavity reflection calculations
+- Silicon-Vacancy center class 
+- Defines the cavity-QED parameters for SiV-cavity system
+- Optimum SiV-Cavity detuning for hgherst contrast
+- Change and set contrast
+- Defines complex reflectivity of the cavity-SiV system at a function of optical frequency
 
 #### SiVgates.py
-- Quantum gate implementations
-- Gate operation simulations
-- Error modeling and analysis
+- Contains a myriads of frequently used functions 
+- State tomography
+- Microwave and RF gates
+- Photon loss
+- Beam splitter operator definition
 
 #### BlindGatesSimulation.py
-- Blind quantum computing protocols
-- Security analysis tools
-- Client-server interaction simulation
-- Fidelity calculations
+- Contains the Blind quantum computing class 
+- All of the function used to simulate Blind gates in our exeriment
 
 #### Plots.py
 - Visualization utilities
@@ -91,31 +93,31 @@ The `SimulationCode` directory contains the core simulation components:
 
 ## Usage Examples
 
-### Basic Network Simulation
-```python
-from SimulationCode.fiber_network import NetworkSimulator
+### Create 2 node experiment with 2 SiVs
 
-# Create a new network
-sim = NetworkSimulator()
+import matplotlib.pyplot as plt
+from matplotlib import colors
+import numpy as np
+import qutip as qt
+import sys
+sys.path.append('../SimulationCode/')
+from TelescopeSimulation import *
+from fiber_network import FiberNetwork
+from SiVnodes import SiV
+from SiVgates import *
+from Plots import *
 
-# Add components
-sim.add_beamsplitter(position=(0, 0))
-sim.add_detector(position=(1, 0))
+#Server A
+siv_a = SiV(kappa_in= (74.9 - 54.5)*(10**3), kappa_w= (54.5)*(10**3), g=5.6*(10**3), wCav = (0)*(10**3), 
+             wSiv = -(479.8 -639.6)*(10**3), dwEl = 0.5*(10**3))
+#Server B
+siv_b = SiV(kappa_in= (43.5 - 26.0)*(10**3), kappa_w= (26.0)*(10**3), g=8.5*(10**3), wCav = (0)*(10**3), 
+             wSiv = -(804.9 -657.6)*(10**3), dwEl = -0.5*(10**3))
 
-# Run simulation
-results = sim.run()
-```
+[Blind gates experiment](Notebooks/Blind_SingleNode_dataMatch.ipynb)
+
 
 ### Creating an SiV Experiment
-```python
-from SimulationCode.fiber_network import FiberNetwork
-from SimulationCode.SiVnodes import SiV
-
-# Create SiV instance
-siv = SiV(kappa_in=74.9e3, kappa_w=54.5e3, g=5.6e3)
-
-# Create network
-network = FiberNetwork(siv)
 
 
 ## Data Storage
