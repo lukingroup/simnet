@@ -271,6 +271,8 @@ For full examples of experiments see following notebooks:
 ## Blind distributed gates
 
 [Blind gates experiment](Notebooks/Blind_SingleNode_dataMatch.ipynb)
+[Blind gates error sources](Notebooks/Blind_SingleNode_errorSources.ipynb)
+
 
 ![Single Qubit gate](Notebooks/FiguresJupyter/SingleQubit_universal.png)
 

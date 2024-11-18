@@ -6,3 +6,6 @@ SimulationCode/OutputFiles/
 entangling_*
 filename.png
 .history/
+DataComparison
+SimulationCode/OutputFiles/BlindComputing/Fig1
+SimulationCode/OutputFiles/BlindComputing/Si_figures
