@@ -2,12 +2,15 @@
 
 ![Network simulations](Notebooks/FiguresJupyter/DoubleColumn_SubFig2.png)
 
-
 A Python-based simulation package designed for modeling quantum networking experiments as a sequence of beam splitter operators. Originally developed to simulate experiments for the Silicon-Vacancy (SiV) team.
 
 ## Overview
 
 This simulation toolkit enables the simulation of entanglement-based experiments for various multi-node quantum network topologies. It is designed for cavity-QED nodes with reflection-based gates using weak coherent sources as photonic time-bins to build qubits and qudits. Each interaction step along the path of the time-bin is encoded as a beam splitter Hamiltonian, which is valid in our case since the number of excitations is less than 1. The toolkit provides tools for simulating quantum state propagation through optical fiber networks and analyzing the resulting quantum states.
+
+[![DOI](https://zenodo.org/badge/844290181.svg)](https://doi.org/10.5281/zenodo.14776224)
+
+
 ## Features
 
 - Beam-splitter operator based network simulation
